@@ -2,20 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer base {
+  html {
+    @apply scroll-smooth;
+    /* Default Light Theme Page Styles (applied to html element) */
+    background-color: var(--page-bg, #f9f9f9); /* Default light background, fallback */
+    color: var(--page-text, #333333); /* Default light text color, fallback */
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    @apply text-base antialiased tracking-tight;
+    line-height: 1.65;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+/* Dark Theme Styles - Applied when 'dark-theme' class is on <html> or <body> */
+.dark-theme {
+  /* Override CSS Variables for Dark Theme Page Styles */
+  --page-bg: #181818; /* Dark page background */
+  --page-text: #ffffff; /* White page text */
 }
