@@ -2,6 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { z } from 'zod';
 
 
 
@@ -73,58 +74,83 @@ export async function GET(request: Request, { params }: Params) {
 
 
 // --- PUT request handler (for updating a post) ---
+const updatePostSchema = z.object({
+  title: z.string().min(1, 'Title is required').optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  tags: z.string().optional(),
+  content: z.any().optional(),
+  status: z.enum(['draft', 'published']).optional(),
+});
+
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } } // Destructure params
+  { params }: { params: { id: string } }
 ) {
-  const postId = await params.id; // Get post ID from route params
+  const postId = params.id; // Remove await here
 
   try {
-    // --- 1. Parse Request Body ---
+    // Validate request body
     const requestBody = await request.json();
-    const { title, description, category, tags, content } = requestBody;
+    const validatedData = updatePostSchema.parse(requestBody);
+    
+    // Destructure validated data
+    const { title, description, category, tags, content, status } = validatedData;
 
-    // --- 2. Input Validation (Basic - extend as needed) ---
-    if (!title) {
-      return NextResponse.json({ error: 'Title is required.' }, { status: 400 }); // 400 Bad Request
-    }
-    if (!content) {
-      return NextResponse.json({ error: 'Content is required.' }, { status: 400 }); // 400 Bad Request
-    }
-
-    // --- 3. Process Tags (Split comma-separated string into array) ---
-    let tagsArrayLiteral: string | null = null;
-    if (tags) {
-      const tagsArray = tags.split(',').map(tag => tag.trim());
-      tagsArrayLiteral = `{${tagsArray.join(',')}}`;
+    // Convert tags to array format
+    const tagsArray = tags?.split(',').map(tag => tag.trim()) || [];
+    
+    // Handle published_at logic
+    let publishedAt = null;
+    if (status === 'published') {
+      publishedAt = new Date().toISOString();
     }
 
-
-    // --- 4. Database Update ---
+    // Build the update query
     const result = await sql`
       UPDATE posts
-      SET title = ${title || null},
-          description = ${description || null},
-          category = ${category || null},
-          tags = ${tagsArrayLiteral},
-          content = ${JSON.stringify(content)},
-          updated_at = NOW()
+      SET 
+        title = ${title},
+        description = ${description},
+        category = ${category},
+        tags = ${tagsArray},
+        content = ${JSON.stringify(content)},
+        status = ${status},
+        published_at = ${publishedAt}
       WHERE id = ${postId}
-      RETURNING id; -- Return the ID of the updated post
+      RETURNING *;
     `;
 
-    if (result.rowCount === 0) {
-      return NextResponse.json({ error: 'Post not found for update.' }, { status: 404 }); // 404 Not Found if no rows updated
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Post not found' }, 
+        { status: 404 }
+      );
     }
 
-    // --- 5. Success Response ---
-    return NextResponse.json({ message: 'Post updated successfully!', postId: postId }, { status: 200 }); // 200 OK - Update successful
+    return NextResponse.json(
+      { message: 'Post updated successfully', post: result.rows[0] },
+      { status: 200 }
+    );
 
-  } catch (error) {
-    console.error('Error updating post:', error);
-    return NextResponse.json({ error: 'Failed to update post in database.' }, { status: 500 }); // 500 Internal Server Error
+  } catch (error: any) {
+    console.error("Error updating post:", error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Internal server error', details: error.message },
+      { status: 500 }
+    );
   }
 }
+
+
 
 export async function DELETE(
   request: Request,

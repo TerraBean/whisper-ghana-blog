@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PostCardProps } from '@/app/page'; // Import PostCardProps type
+import { format } from 'date-fns';
 
 const ManagePostsPage = () => {
   const [posts, setPosts] = useState<PostCardProps[]>([]); // State to hold array of posts
@@ -74,7 +75,7 @@ const ManagePostsPage = () => {
       setLoading(false); // End loading state
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
@@ -96,6 +97,8 @@ const ManagePostsPage = () => {
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                      {/* --- New "Status" Column Header --- */}
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published Date</th>
                       <th scope="col" className="relative px-6 py-3">
                         <span className="sr-only">Edit/Delete</span>
@@ -107,17 +110,19 @@ const ManagePostsPage = () => {
                       <tr key={post.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{post.title}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.category || 'Uncategorized'}</td>
+                        {/* --- New "Status" Column Data --- */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.status}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : 'Draft'}
+                          {post.published_at ? format(new Date(post.published_at), 'MMMM d, yyyy') : 'Draft'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <Link href={`/admin/edit-post/${post.id}`} className="text-blue-600 hover:text-blue-900">Edit</Link>
                           <button
-                            onClick={() => handleDeletePost(post.id)} // Call handleDeletePost function
+                            onClick={() => handleDeletePost(post.id)}
                             className="text-red-600 hover:text-red-900 ml-4"
                           >
                             Delete
-                          </button> {/* Placeholder delete action */}
+                          </button>
                         </td>
                       </tr>
                     ))}

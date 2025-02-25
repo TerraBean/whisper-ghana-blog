@@ -8,13 +8,14 @@ export interface PostCardProps { // Ensure 'export' is still there
   id: string;
   title: string;
   description: string;
+  status: 'draft' | 'published'; // Add status property to the interface
   category: string;
   tags: string[]; // Add tags property to the interface to match database
   author: string;     // Add author property
   content: any;    // Add content property (type 'any' for Tiptap JSON for now, refine later if needed)
   minutesToRead: number;
   createdAt: string;
-  publishedAt: string | null; // Add publishedAt property (can be null for drafts)
+  published_at: string | null; // Add publishedAt property (can be null for drafts)
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -36,7 +37,7 @@ const PostCard: React.FC<PostCardProps> = ({
           <span className="text-sm text-gray-500">Category: {category}</span>
           <span className="text-sm text-gray-500">{minutesToRead} min read</span>
         </div>
-        <p className="text-sm text-gray-500 mt-2">Published on: {formattedDate}</p>
+        <p className="text-sm text-gray-500 mt-2">Created at: {formattedDate}</p>
       </Link>
     </div>
   );
