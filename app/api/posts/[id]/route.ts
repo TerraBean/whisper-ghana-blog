@@ -81,6 +81,7 @@ const updatePostSchema = z.object({
   tags: z.string().optional(),
   content: z.any().optional(),
   status: z.enum(['draft', 'published']).optional(),
+  scheduled_publish_at: z.string().optional().nullable(),
 });
 
 export async function PUT(
@@ -93,37 +94,38 @@ export async function PUT(
     // Validate request body
     const requestBody = await request.json();
     const validatedData = updatePostSchema.parse(requestBody);
-    
+
     // Destructure validated data
-    const { title, description, category, tags, content, status } = validatedData;
+    const { title, description, category, tags, content, status, scheduled_publish_at } = validatedData;
 
     // Convert tags to array format
     const tagsArray = tags?.split(',').map(tag => tag.trim()) || [];
-    
+
     // Handle published_at logic
     let publishedAt = null;
-    if (status === 'published') {
+    if (status === 'published' && !scheduled_publish_at) { // Publish immediately if status is 'published' and no scheduled date
       publishedAt = new Date().toISOString();
     }
 
     // Build the update query
     const result = await sql`
-      UPDATE posts
-      SET 
-        title = ${title},
-        description = ${description},
-        category = ${category},
-        tags = ${tagsArray},
-        content = ${JSON.stringify(content)},
-        status = ${status},
-        published_at = ${publishedAt}
-      WHERE id = ${postId}
-      RETURNING *;
-    `;
+            UPDATE posts
+            SET
+                title = ${title},
+                description = ${description},
+                category = ${category},
+                tags = ${tagsArray},
+                content = ${JSON.stringify(content)},
+                status = ${status},
+                published_at = ${publishedAt},
+                scheduled_publish_at = ${scheduled_publish_at}
+            WHERE id = ${postId}
+            RETURNING *;
+        `;
 
     if (result.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Post not found' }, 
+        { error: 'Post not found' },
         { status: 404 }
       );
     }

@@ -11,29 +11,37 @@ const ManagePostsPage = () => {
   const [posts, setPosts] = useState<PostCardProps[]>([]); // State to hold array of posts
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all'); // State for status filter, default 'all'
+
 
   useEffect(() => {
     const fetchPosts = async () => {
-      setLoading(true);
-      setError(null); // Clear any previous errors
-      try {
-        const response = await fetch('/api/posts'); // Fetch from /api/posts (GET endpoint)
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        setLoading(true);
+        setError(null);
+        try {
+            // --- Construct URL with status filter ---
+            const url = new URL('/api/posts', window.location.origin); // Use URL constructor
+            if (statusFilter !== 'all') {
+                url.searchParams.append('status', statusFilter); // Add status query parameter
+            }
+
+
+            const response = await fetch(url.toString()); // Fetch from /api/posts with filter
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            setPosts(data.posts || []);
+            setLoading(false);
+        } catch (e: any) {
+            console.error('Error fetching posts:', e);
+            setError('Failed to load posts. Please try again later.');
+            setLoading(false);
         }
-        const data = await response.json();
-        setPosts(data.posts || []); // Update state with fetched posts array
-        setLoading(false);
-      } catch (e: any) { // Type 'e' as 'any' or 'Error'
-        console.error('Error fetching posts:', e);
-        setError('Failed to load posts. Please try again later.');
-        setLoading(false);
-      }
     };
 
     fetchPosts();
-  }, []); // Empty dependency array: fetch posts only once on component mount
-
+}, [statusFilter]); // Re-fetch posts when statusFilter changes  <-- Added statusFilter to dependency array
   if (loading) {
     return <div>Loading posts...</div>; // Simple loading state
   }
@@ -86,7 +94,23 @@ const ManagePostsPage = () => {
       <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">List of Blog Posts</h2>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-800">List of Blog Posts</h2>
+              <div>
+                <label htmlFor="status-filter" className="mr-2 text-sm font-medium text-gray-700">Filter by Status:</label>
+                <select
+                  id="status-filter"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="published">Published Only</option>
+                  <option value="draft">Drafts Only</option>
+                </select>
+              </div>
+            </div>
+
 
             {posts.length === 0 ? (
               <p className="text-gray-700">No posts available yet.</p>

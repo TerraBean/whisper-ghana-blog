@@ -16,6 +16,7 @@ export interface PostCardProps { // Ensure 'export' is still there
   minutesToRead: number;
   createdAt: string;
   published_at: string | null; // Add publishedAt property (can be null for drafts)
+  scheduled_publish_at: string | null; // Add scheduledPublishedAt property (can be null for drafts)
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -62,18 +63,23 @@ const BlogIndexPage = async () => { // Marked as async to fetch data
 
 // --- Function to Fetch Recent Posts (Server-Side) ---
 async function getRecentPosts(): Promise<PostCardProps[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000'; // Fallback for non-Vercel environments
+  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000'; // Fallback
 
   try {
-    const response = await fetch(`${baseUrl}/api/posts/recent`); // Use baseUrl
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data.posts as PostCardProps[];
+      // --- Construct URL with status filter for "published" posts ---
+      const url = new URL(`${baseUrl}/api/posts/recent`); // Base URL for recent posts
+      url.searchParams.append('status', 'published'); // Add query parameter: ?status=published
+
+
+      const response = await fetch(url.toString()); // Fetch from API with status filter
+      if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data.posts as PostCardProps[];
   } catch (error) {
-    console.error('Error fetching recent posts in getRecentPosts():', error);
-    return [];
+      console.error('Error fetching recent posts in getRecentPosts():', error);
+      return [];
   }
 }
 

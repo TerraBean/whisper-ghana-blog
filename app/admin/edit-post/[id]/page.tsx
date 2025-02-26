@@ -22,6 +22,7 @@ const EditPostPage = () => {
     const [loadingUpdate, setLoadingUpdate] = useState(false);
     const [updateError, setUpdateError] = useState<string | null>(null);
     const [status, setStatus] = useState<'draft' | 'published'>('draft'); // Add status state, default to 'draft'
+    const [scheduledPublishAt, setScheduledPublishAt] = useState<string | null>(null); // State for scheduled publish date/time
 
 
 
@@ -44,6 +45,7 @@ const EditPostPage = () => {
                         setTags(post.tags ? post.tags.join(', ') : ''); // Convert array to comma-separated string
                         setContent((post.content) || null); // Parse JSON content back to object
                         setStatus(post.status || 'draft'); // Initialize status state from fetched post data, default to 'draft'  <--- ADDED this line
+                        setScheduledPublishAt(post.scheduled_publish_at || null);
 
                     } else {
                         setError('Post not found.');
@@ -84,6 +86,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         tags: tagsToSend,
         content,
         status,
+        scheduled_publish_at: scheduledPublishAt,
       }),
     });
 
@@ -158,6 +161,17 @@ const handleSubmit = async (e: React.FormEvent) => {
                                 </select>
                             </div>
 
+                            <div>
+                                <label htmlFor="scheduledPublishAt" className="block text-sm font-medium text-gray-700">Schedule Publish Date/Time (Optional)</label>
+                                <input
+                                    type="datetime-local"
+                                    id="scheduledPublishAt"
+                                    value={scheduledPublishAt || ''} // Control the value, handle null
+                                    onChange={(e) => setScheduledPublishAt(e.target.value === '' ? null : e.target.value)} // Handle clearing the date
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                />
+                                <p className="text-sm text-gray-500 mt-1">Leave blank for immediate publish when status is set to "Published".</p>
+                            </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Content</label>

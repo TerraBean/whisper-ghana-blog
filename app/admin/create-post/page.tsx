@@ -16,6 +16,7 @@ const CreatePostPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [status, setStatus] = useState<'draft' | 'published'>('draft'); // Add status state, default to 'draft'
+    const [scheduledPublishAt, setScheduledPublishAt] = useState<string | null>(null); // State for scheduled publish date/time
 
 
 
@@ -31,13 +32,14 @@ const CreatePostPage = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ // Include status in request body
+                body: JSON.stringify({
                     title,
                     description,
                     category,
                     tags,
                     content,
-                    status, // Send status in create request  <-- ADDED status here
+                    status,
+                    scheduled_publish_at: scheduledPublishAt || null, // Send null explicitly if not set
                 }),
             });
 
@@ -98,6 +100,20 @@ const CreatePostPage = () => {
                         <option value="draft">Draft</option>
                         <option value="published">Published</option>
                     </select>
+                </div>
+
+                {/* --- Scheduled Publish Date/Time Picker - ADDED --- */}
+                <div>
+                    <label htmlFor="scheduledPublishAt" className="block text-sm font-medium text-gray-700">Schedule Publish Date/Time (Optional)</label>
+                    <input
+                        type="datetime-local"
+                        id="scheduledPublishAt"
+                        value={scheduledPublishAt || ''}
+                        onChange={(e) => setScheduledPublishAt(e.target.value === '' ? null : e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        disabled={status === 'draft'} // Disable for drafts
+                    />
+                    <p className="text-sm text-gray-500 mt-1">Leave blank for immediate publish when status is set to "Published".</p>
                 </div>
 
 
