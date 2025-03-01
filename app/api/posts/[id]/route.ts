@@ -10,8 +10,11 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 
 // Type definition for route parameters
+interface Params {
+  id: string; // 'id' should match the dynamic segment name: '[id]'
+}
 
-export async function GET(request: Request, { params }: {params: {id: string}}) {
+export async function GET(request: Request, { params }: { params: Params }) {
   // --- 1. Destructure params and get postId ---
   const { id: postId } = await params; // Destructure 'id' as 'postId'
 
