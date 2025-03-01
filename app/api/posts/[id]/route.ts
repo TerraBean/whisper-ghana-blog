@@ -16,7 +16,7 @@ interface Params {
   };
 }
 
-export async function GET(request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: {params: {id: string}}) {
   // --- 1. Destructure params and get postId ---
   const { id: postId } = await params; // Destructure 'id' as 'postId'
 
