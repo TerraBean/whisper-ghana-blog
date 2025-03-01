@@ -8,9 +8,7 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 
 // Type definition for route parameters
-interface Params {
-  id: string; // 'id' should match the dynamic segment name: '[id]'
-}
+
 
 export async function GET(
   request: Request,
