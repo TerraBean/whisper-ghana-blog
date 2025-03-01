@@ -33,7 +33,7 @@ const ManagePostsPage = () => {
             const data = await response.json();
             setPosts(data.posts || []);
             setLoading(false);
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error('Error fetching posts:', e);
             setError('Failed to load posts. Please try again later.');
             setLoading(false);

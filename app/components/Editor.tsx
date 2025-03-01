@@ -38,9 +38,7 @@ import {
   ListOrdered,
   Strikethrough,
   Underline as UnderlineIcon,
-  Video,
   FileVideo,
-  Hash,
 } from 'lucide-react';
 
 const lowlight = createLowlight({});
@@ -213,11 +211,10 @@ const Editor = () => {
   });
 
   useEffect(() => {
+    const currentEditorRef = editorRef.current;
     const handleDblClick = (event: MouseEvent) => {
-      if (!editor || !editorRef.current) return;
+      if (!editor || currentEditorRef) return;
 
-      const rect = editorRef.current.getBoundingClientRect();
-      const clickY = event.clientY - rect.top;
 
       const pos = editor.view.posAtCoords({ left: event.clientX, top: event.clientY });
       if (pos && pos.inside !== null) {
@@ -225,13 +222,13 @@ const Editor = () => {
       }
     };
 
-    if (editorRef.current) {
-      editorRef.current.addEventListener('dblclick', handleDblClick);
+    if (currentEditorRef) {
+      currentEditorRef.addEventListener('dblclick', handleDblClick);
     }
 
     return () => {
-      if (editorRef.current) {
-        editorRef.current.removeEventListener('dblclick', handleDblClick);
+      if (currentEditorRef) {
+        currentEditorRef.removeEventListener('dblclick', handleDblClick);
       }
     };
   }, [editor]);

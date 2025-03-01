@@ -135,7 +135,7 @@ export async function PUT(
       { status: 200 }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating post:", error);
 
     if (error instanceof z.ZodError) {
@@ -146,7 +146,7 @@ export async function PUT(
     }
 
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: (error as Error).message },
       { status: 500 }
     );
   }

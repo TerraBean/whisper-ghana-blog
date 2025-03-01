@@ -1,10 +1,12 @@
 'use client'; // Mark as Client Component
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Editor from '@/app/components/editor/Editor'; // Adjust path if needed
 import Link from 'next/link'; // Import Link
+import { TiptapContent } from '@/app/types'; // Import TiptapContent type
+
 
 
 const EditPostPage = () => {
@@ -16,11 +18,11 @@ const EditPostPage = () => {
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
     const [tags, setTags] = useState('');
-    const [content, setContent] = useState<any>(null); // State for editor content
+    const [content, setContent] = useState<TiptapContent | null>(null); // State for editor content
     const [loadingPost, setLoadingPost] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [loadingUpdate, setLoadingUpdate] = useState(false);
-    const [updateError, setUpdateError] = useState<string | null>(null);
+    // const [loadingUpdate, setLoadingUpdate] = useState(false);
+    // const [updateError, setUpdateError] = useState<string | null>(null);
     const [status, setStatus] = useState<'draft' | 'published'>('draft'); // Add status state, default to 'draft'
     const [scheduledPublishAt, setScheduledPublishAt] = useState<string | null>(null); // State for scheduled publish date/time
 
@@ -50,7 +52,7 @@ const EditPostPage = () => {
                     } else {
                         setError('Post not found.');
                     }
-                } catch (e: any) {
+                } catch (e: unknown) {
                     console.error('Error fetching post:', e);
                     setError('Failed to load post for editing.');
                 } finally {
@@ -66,9 +68,6 @@ const EditPostPage = () => {
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   if (!postId) return;
-
-  setLoadingUpdate(true);
-  setUpdateError(null);
 
   try {
     // Convert tags to comma-separated string for API
@@ -99,12 +98,15 @@ const handleSubmit = async (e: React.FormEvent) => {
     router.push('/admin/manage-posts');
     alert('Post updated successfully!');
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update error:', error);
-    setUpdateError(error.message);
-    alert(`Error: ${error.message}`);
+    if (error instanceof Error) {
+      alert(`Error: ${error.message}`);
+    } else {
+      alert('An unknown error occurred.');
+    }
   } finally {
-    setLoadingUpdate(false);
+    // setLoadingUpdate(false);
   }
 };
 
@@ -170,7 +172,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                                     onChange={(e) => setScheduledPublishAt(e.target.value === '' ? null : e.target.value)} // Handle clearing the date
                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 />
-                                <p className="text-sm text-gray-500 mt-1">Leave blank for immediate publish when status is set to "Published".</p>
+                                <p className="text-sm text-gray-500 mt-1">Leave blank for immediate publish when status is set to &quot;Published&quot;.</p>
                             </div>
 
                             <div>

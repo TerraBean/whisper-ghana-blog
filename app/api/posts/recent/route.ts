@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) { // Use NextRequest
                 published_at,
                 status
             FROM posts
+            WHERE status = 'published'
+            AND published_at IS NOT NULl
         `;
 
         if (statusFilter === 'published') { // Apply filter ONLY for 'published' status on frontend
@@ -43,8 +45,9 @@ export async function GET(request: NextRequest) { // Use NextRequest
                     status
                 FROM posts
                 WHERE status = 'published'
+                  AND published_at IS NOT NULL  
             `;
-        } // If no statusFilter or statusFilter is not 'published', fetch all (or adjust as needed for your logic)
+        } // If no statusFilter or statusFilter is not 'published', fetch all (or adjust as needed for your logic) // If no statusFilter or statusFilter is not 'published', fetch all (or adjust as needed for your logic)
 
 
         const results = await query;

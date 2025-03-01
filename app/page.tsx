@@ -3,6 +3,7 @@
 import React from 'react'; // useState and useEffect are removed
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
+import { TiptapContent } from './types';
 
 export interface PostCardProps { // Ensure 'export' is still there
   id: string;
@@ -12,7 +13,7 @@ export interface PostCardProps { // Ensure 'export' is still there
   category: string;
   tags: string[]; // Add tags property to the interface to match database
   author: string;     // Add author property
-  content: any;    // Add content property (type 'any' for Tiptap JSON for now, refine later if needed)
+  content: TiptapContent;    // Add content property (type 'any' for Tiptap JSON for now, refine later if needed)
   minutesToRead: number;
   createdAt: string;
   published_at: string | null; // Add publishedAt property (can be null for drafts)

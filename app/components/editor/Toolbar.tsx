@@ -1,6 +1,5 @@
 // app/components/editor/Toolbar.tsx
 
-import React, { useCallback } from 'react';
 import {
   Bold,
   Italic,

@@ -39,7 +39,7 @@ const AdminDashboardPage = () => {
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <h2 className="text-xl font-semibold text-gray-800 mb-4">Welcome to the Admin Dashboard!</h2>
                         <p className="text-gray-700">
-                            Use the navigation above to manage your blog content.  Currently, only "Create New Post" is functional, but "Manage Posts" and other features will be added in future steps.
+                            Use the navigation above to manage your blog content.  Currently, only &quot;Create New Post&quot; is functional, but &quot;Manage Posts&quot; and other features will be added in future steps.
                         </p>
                     </div>
                 </div>

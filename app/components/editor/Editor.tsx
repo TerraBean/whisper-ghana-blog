@@ -25,13 +25,14 @@ import { Moon, Sun } from 'lucide-react'; // Icons for theme toggle
 import { GLOBAL_STYLES } from './editorStyles';
 import Toolbar from './Toolbar';
 import { useTheme } from '../../contexts/ThemeContext'; // Import useTheme Hook
+import { TiptapContent } from '@/app/types';
 
 const lowlight = createLowlight({});
 
 // --- Define Props Interface for Editor Component ---
 interface EditorProps {
-  setContent: React.Dispatch<React.SetStateAction<any>>; // Define setContent prop type
-  initialContent?: any;
+  setContent: React.Dispatch<React.SetStateAction<TiptapContent | null>>; // Define setContent prop type
+  initialContent?: TiptapContent | null;
 }
 
 const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // Use EditorProps interface and destructure setContent prop
@@ -97,9 +98,6 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
   const handleDoubleClick = useCallback((event: MouseEvent) => {
     if (!editor || !editorRef.current) return;
 
-    const rect = editorRef.current.getBoundingClientRect();
-    const clickY = event.clientY - rect.top;
-
     const pos = editor.view.posAtCoords({ left: event.clientX, top: event.clientY });
     if (pos && pos.inside !== null) {
       editor.commands.setTextSelection(pos.inside);
@@ -128,15 +126,18 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
     return `p-2 hover:bg-gray-100 rounded ${active ? 'bg-gray-200' : ''}`;
   }, []);
 
+
+
   // --- Editor Lifecycle Effects ---
   useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.addEventListener('dblclick', handleDoubleClick);
+    const currentEditorRef = editorRef.current;
+    if (currentEditorRef) {
+      currentEditorRef.addEventListener('dblclick', handleDoubleClick);
     }
 
     return () => {
-      if (editorRef.current) {
-        editorRef.current.removeEventListener('dblclick', handleDoubleClick);
+      if (currentEditorRef) {
+       currentEditorRef.removeEventListener('dblclick', handleDoubleClick);
       }
     };
   }, [editorRef, handleDoubleClick]);

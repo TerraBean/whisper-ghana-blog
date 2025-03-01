@@ -33,7 +33,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${initialThemeSSR === 'dark' ? 'dark-theme' : ''}`}> {/* Apply initial theme class to <html> */}
       <ThemeProvider>
-        <RootLayoutInner geistMonoVariable={geistMono.variable} children={children} />
+      <RootLayoutInner geistMonoVariable={geistMono.variable}>
+          {children}
+        </RootLayoutInner>
       </ThemeProvider>
     </html>
   );
