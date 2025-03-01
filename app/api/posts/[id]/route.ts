@@ -10,11 +10,14 @@ export const dynamic = 'force-dynamic';
 // Type definition for route parameters
 
 
+import { NextRequest } from 'next/server';
+
 export async function GET(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
-  const postId = context.params.id;
+
+  const postId = params.id;
 
   if (!postId) {
     return NextResponse.json({ error: 'Post ID is required.' }, { status: 400 });
@@ -78,9 +81,10 @@ const updatePostSchema = z.object({
 });
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+
   const postId = params.id; // Remove await here
 
   try {
@@ -146,9 +150,10 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } } // Destructure params
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
+
   const postId = params.id; // Get post ID from route params
 
   try {
