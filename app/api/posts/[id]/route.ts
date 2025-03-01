@@ -4,8 +4,6 @@ import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { z } from 'zod';
 
-
-
 // Define route segment config to allow dynamic route
 export const dynamic = 'force-dynamic';
 
@@ -14,17 +12,17 @@ interface Params {
   id: string; // 'id' should match the dynamic segment name: '[id]'
 }
 
-export async function GET(request: Request, { params }: { params: Params }) {
-  // --- 1. Destructure params and get postId ---
-  const { id: postId } = await params; // Destructure 'id' as 'postId'
+export async function GET(
+  request: Request,
+  context: { params: { id: string } }
+) {
+  const postId = context.params.id;
 
-  // --- 2. Input Validation ---
   if (!postId) {
     return NextResponse.json({ error: 'Post ID is required.' }, { status: 400 });
   }
 
   try {
-    // --- 3. Database Query ---
     const postResult = await sql`
       SELECT
         id,
@@ -69,7 +67,6 @@ export async function GET(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: 'Error fetching post from database.' }, { status: 500 });
   }
 }
-
 
 // --- PUT request handler (for updating a post) ---
 const updatePostSchema = z.object({
@@ -149,8 +146,6 @@ export async function PUT(
     );
   }
 }
-
-
 
 export async function DELETE(
   request: Request,
