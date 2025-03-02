@@ -64,7 +64,10 @@ const BlogIndexPage = async () => { // Marked as async to fetch data
 
 // --- Function to Fetch Recent Posts (Server-Side) ---
 async function getRecentPosts(): Promise<PostCardProps[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000'; // Fallback
+  // const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000'; 
+  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
+  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` 
+  : 'http://localhost:3000';
 
   try {
       // --- Construct URL with status filter for "published" posts ---
