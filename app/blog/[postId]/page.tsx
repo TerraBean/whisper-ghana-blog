@@ -7,26 +7,24 @@ import { PostCardProps } from '@/app/page'; // Assuming PostCardProps is defined
 import PostContent from '@/app/components/PostContent';
 
 interface BlogPostPageProps {
-  params: {
-    postId: string; // 'postId' should match the dynamic folder name: '[postId]'
-  };
+  params: Promise<{ postId: string }>;
 }
 
 const BlogPostPage: React.FC<BlogPostPageProps> = async ({ params }) => {
-  const {postId} = await params;
-
+  const { postId } = await params; // ✅ Await the Promise
   const post = await getPostById(postId);
 
   if (!post) {
-    notFound(); // Next.js function to return 404 response
+    notFound();
   }
 
-  const formattedDate = post.publishedAt ? format(parseISO(post.publishedAt), 'MMM d, yyyy') : 'Draft';
-
+  const formattedDate = post.published_at
+    ? format(parseISO(post.published_at), 'MMM d, yyyy')
+    : 'Draft';
 
   return (
     <div className="container mx-auto px-4 py-8">
-       <article className="max-w-3xl mx-auto">
+      <article className="max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
         <div className="mb-6 text-gray-600 flex items-center space-x-4">
           <span>Category: {post.category || 'Uncategorized'}</span>
@@ -35,7 +33,7 @@ const BlogPostPage: React.FC<BlogPostPageProps> = async ({ params }) => {
           <span>{post.minutesToRead} min read</span>
         </div>
         <div className="prose max-w-none">
-          <PostContent content={post.content} /> {/* Use the PostContent Client Component */}
+          <PostContent content={post.content} />
         </div>
       </article>
     </div>

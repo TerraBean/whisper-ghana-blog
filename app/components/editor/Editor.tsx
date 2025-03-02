@@ -89,7 +89,14 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
     },
     // --- Update editor content whenever editor state changes ---
     onUpdate({ editor }) {
-      setContent(editor.getJSON()); // Call setContent prop to pass content to parent
+      const jsonContent = editor.getJSON();
+
+      // Ensure 'type' is defined before setting content
+      if (jsonContent && jsonContent.type === undefined) {
+        jsonContent.type = 'doc'; 
+      }
+    
+      setContent(jsonContent as TiptapContent); 
     },
     content: initialContent || null, // Set initial content
   });
@@ -137,7 +144,7 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
 
     return () => {
       if (currentEditorRef) {
-       currentEditorRef.removeEventListener('dblclick', handleDoubleClick);
+        currentEditorRef.removeEventListener('dblclick', handleDoubleClick);
       }
     };
   }, [editorRef, handleDoubleClick]);

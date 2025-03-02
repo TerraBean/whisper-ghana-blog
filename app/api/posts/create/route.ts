@@ -26,6 +26,7 @@ export async function POST(request: Request) {
 
 
     const tagsArray = tags?.split(',').map(tag => tag.trim()) || [];
+    const tagsArrayLiteral = tagsArray.length > 0 ? `{${tagsArray.map(tag => `"${tag}"`).join(',')}}` : null;
 
     let publishedAt = null;
     if (status === 'published' && !scheduled_publish_at) { // Publish immediately if status is 'published' and no scheduled date
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     INSERT INTO posts (
         title, description, category, tags, author, content, status, published_at, scheduled_publish_at
     ) VALUES (
-        ${title}, ${description}, ${category}, ${tagsArray}, 'admin', ${JSON.stringify(content)}, ${status},
+        ${title}, ${description}, ${category}, ${tagsArrayLiteral}, 'admin', ${JSON.stringify(content)}, ${status},
         ${publishedAt}, ${scheduled_publish_at}  
     )
     RETURNING *;

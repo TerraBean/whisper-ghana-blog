@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Editor from '@/app/components/editor/Editor';
 import Link from 'next/link'; // Import Link
+import { TiptapContent } from '@/app/types';
 
 const CreatePostPage = () => {
     const router = useRouter();
@@ -12,7 +13,7 @@ const CreatePostPage = () => {
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
     const [tags, setTags] = useState('');
-    const [content, setContent] = useState(null); // State for editor content
+    const [content, setContent] = useState<TiptapContent | null>(null); 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [status, setStatus] = useState<'draft' | 'published'>('draft'); // Add status state, default to 'draft'
@@ -119,7 +120,7 @@ const CreatePostPage = () => {
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Content</label>
-                    <Editor setContent={setContent} initialContent={null} /> {/* No initial content for create */}
+                    <Editor setContent={setContent} initialContent={null as TiptapContent | null} /> {/* No initial content for create */}
                 </div>
 
                 <div>

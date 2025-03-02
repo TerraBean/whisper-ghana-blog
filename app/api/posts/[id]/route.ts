@@ -14,10 +14,11 @@ import { NextRequest } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { params } = context;
 
-  const postId = params.id;
+  const postId = (await params).id;
 
   if (!postId) {
     return NextResponse.json({ error: 'Post ID is required.' }, { status: 400 });
@@ -80,12 +81,15 @@ const updatePostSchema = z.object({
   scheduled_publish_at: z.string().optional().nullable(),
 });
 
+
+
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
 
-  const postId = params.id; // Remove await here
+  const { params } = context;
+  const postId = (await params).id // Remove await here
 
   try {
     // Validate request body
@@ -97,6 +101,8 @@ export async function PUT(
 
     // Convert tags to array format
     const tagsArray = tags?.split(',').map(tag => tag.trim()) || [];
+    const tagsArrayLiteral = tagsArray.length > 0 ? `{${tagsArray.map(tag => `"${tag}"`).join(',')}}` : null;
+
 
     // Handle published_at logic
     let publishedAt = null;
@@ -111,7 +117,7 @@ export async function PUT(
                 title = ${title},
                 description = ${description},
                 category = ${category},
-                tags = ${tagsArray},
+                tags = ${tagsArrayLiteral},
                 content = ${JSON.stringify(content)},
                 status = ${status},
                 published_at = ${publishedAt},
@@ -151,10 +157,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
 
-  const postId = params.id; // Get post ID from route params
+  const { params } = context;
+  const postId = (await params).id; // Get post ID from route params
 
   try {
     // --- 1. Database Delete Operation ---
