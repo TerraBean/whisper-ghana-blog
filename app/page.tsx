@@ -63,27 +63,51 @@ const BlogIndexPage = async () => { // Marked as async to fetch data
 };
 
 // --- Function to Fetch Recent Posts (Server-Side) ---
+// --- Function to Fetch Recent Posts (Server-Side) ---
 async function getRecentPosts(): Promise<PostCardProps[]> {
-  // const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000'; 
-  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
-  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` 
-  : 'http://localhost:3000';
+  // Use Vercel's automatically provided environment variables
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000';
 
   try {
-      // --- Construct URL with status filter for "published" posts ---
-      const url = new URL(`${baseUrl}/api/posts/recent`); // Base URL for recent posts
-      url.searchParams.append('status', 'published'); // Add query parameter: ?status=published
+    const url = new URL(`${baseUrl}/api/posts/recent`);
+    url.searchParams.append('status', 'published');
 
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Add revalidation options (if needed)
+      next: { revalidate: 60 } // Revalidate every 60 seconds
+    });
 
-      const response = await fetch(url.toString()); // Fetch from API with status filter
-      if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data.posts as PostCardProps[];
+    // Handle non-OK responses first
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    // Verify response content type
+    const contentType = response.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      const body = await response.text();
+      throw new Error(`Expected JSON but got ${contentType}: ${body.slice(0, 100)}`);
+    }
+
+    const data = await response.json();
+
+    // Validate response structure
+    if (!data.posts || !Array.isArray(data.posts)) {
+      throw new Error('Invalid API response structure');
+    }
+
+    return data.posts as PostCardProps[];
+
   } catch (error) {
-      console.error('Error fetching recent posts in getRecentPosts():', error);
-      return [];
+    console.error('Error in getRecentPosts():', error instanceof Error ? error.message : error);
+    // Consider sending error to monitoring service
+    return [];
   }
 }
 
