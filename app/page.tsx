@@ -63,53 +63,50 @@ const BlogIndexPage = async () => { // Marked as async to fetch data
 };
 
 // --- Function to Fetch Recent Posts (Server-Side) ---
-// --- Function to Fetch Recent Posts (Server-Side) ---
 async function getRecentPosts(): Promise<PostCardProps[]> {
-  // Use Vercel's automatically provided environment variables
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
+  // Use production URL directly for Vercel deployments
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? 'https://whisper-ghana-blog.vercel.app' // Hardcode your production URL
     : 'http://localhost:3000';
 
   try {
     const url = new URL(`${baseUrl}/api/posts/recent`);
     url.searchParams.append('status', 'published');
 
+    // Add debug logs
+    console.log('Fetching from:', url.toString());
+    const startTime = Date.now();
+
     const response = await fetch(url.toString(), {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Add revalidation options (if needed)
-      next: { revalidate: 60 } // Revalidate every 60 seconds
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store' // Bypass any cache issues
     });
 
-    // Handle non-OK responses first
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    const responseTime = Date.now() - startTime;
+    console.log(`Response status: ${response.status} (${responseTime}ms)`);
+
+    // Get response text first for error handling
+    const responseText = await response.text();
+    
+    // Check for HTML in response
+    if (responseText.startsWith('<!DOCTYPE')) {
+      console.error('Received HTML response:', responseText.slice(0, 200));
+      throw new Error('Unexpected HTML response from API');
     }
 
-    // Verify response content type
-    const contentType = response.headers.get('content-type');
-    if (!contentType?.includes('application/json')) {
-      const body = await response.text();
-      throw new Error(`Expected JSON but got ${contentType}: ${body.slice(0, 100)}`);
-    }
-
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     
     // Validate response structure
-    if (!data.posts || !Array.isArray(data.posts)) {
-      throw new Error('Invalid API response structure');
+    if (!data?.posts || !Array.isArray(data.posts)) {
+      throw new Error('Invalid posts array in response');
     }
 
     return data.posts as PostCardProps[];
 
   } catch (error) {
-    console.error('Error in getRecentPosts():', error instanceof Error ? error.message : error);
-    // Consider sending error to monitoring service
-    return [];
+    console.error('Critical error in getRecentPosts:', error);
+    return []; // Return empty array to prevent page crash
   }
 }
-
 
 export default BlogIndexPage;

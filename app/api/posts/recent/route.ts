@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) { // Use NextRequest
     const statusFilter = searchParams.get('status'); // Get 'status' query parameter
 
     try {
+        console.log('API Request Headers:', request.headers);
+        console.log('DB Connection String:', process.env.POSTGRES_URL?.slice(0, 25) + '...');
         let query = sql`
             SELECT
                 id,
@@ -65,6 +67,7 @@ export async function GET(request: NextRequest) { // Use NextRequest
             status: row.status
         }));
 
+        console.log('Found posts:', results.rowCount);
 
         return NextResponse.json({ posts }, { status: 200 });
 
