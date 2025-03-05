@@ -43,22 +43,36 @@ const BlogPostPage: React.FC<BlogPostPageProps> = async ({ params }) => {
 
 async function getPostById(postId: string): Promise<PostCardProps | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-      ? process.env.NEXT_PUBLIC_VERCEL_URL
+    // Use proper URL construction with protocol
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? 'https://whisper-ghana-blog.vercel.app'
       : 'http://localhost:3000';
 
-    const response = await fetch(`${baseUrl}/api/posts/${postId}`); // Fetch single post API
+    // Use URL constructor for proper encoding
+    const url = new URL(`${baseUrl}/api/posts/${postId}`);
+
+    const response = await fetch(url.toString(), {
+      headers: { 'Content-Type': 'application/json' },
+      next: { revalidate: 60 } // Optional revalidation
+    });
+
     if (!response.ok) {
-      if (response.status === 404) {
-        return null; // Handle 404 specifically (post not found)
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 404) return null;
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
     }
+
     const data = await response.json();
-    return data.post as PostCardProps; // Type assertion
+    
+    // Validate response structure
+    if (!data?.post) {
+      throw new Error('Invalid post response structure');
+    }
+
+    return data.post as PostCardProps;
+
   } catch (error) {
-    console.error('Error fetching post by ID in getPostById():', error);
-    return null; // Return null in case of error
+    console.error('Error in getPostById():', error);
+    return null;
   }
 }
 
