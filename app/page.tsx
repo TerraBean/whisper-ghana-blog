@@ -96,7 +96,7 @@ async function getRecentPosts(): Promise<PostCardProps[]> {
     }
 
     const data = await response.json();
-
+    
     // Validate response structure
     if (!data.posts || !Array.isArray(data.posts)) {
       throw new Error('Invalid API response structure');
