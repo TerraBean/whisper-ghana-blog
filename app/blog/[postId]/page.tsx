@@ -7,7 +7,7 @@ import { PostCardProps } from '@/app/page'; // Assuming PostCardProps is defined
 import PostContent from '@/app/components/PostContent';
 
 interface BlogPostPageProps {
-  params: { postId: string }; // No longer a Promise since we use generateStaticParams
+  params: Awaited<{ postId: string }>; // Ensures compatibility with Promise-based params
 }
 
 export async function generateStaticParams() {
@@ -82,7 +82,7 @@ async function getPostById(postId: string): Promise<PostCardProps | null> {
   }
 }
 
-export async function generateMetadata({ params }: { params: { postId: string } }) {
+export async function generateMetadata({ params }: { params: Awaited<{ postId: string }> }) {
   const post = await getPostById(params.postId);
 
   return {
