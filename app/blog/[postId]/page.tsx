@@ -7,12 +7,16 @@ import { PostCardProps } from '@/app/page'; // Assuming PostCardProps is defined
 import PostContent from '@/app/components/PostContent';
 
 interface BlogPostPageProps {
-  params: Promise<{ postId: string }>;
+  params: { postId: string }; // No longer a Promise since we use generateStaticParams
+}
+
+export async function generateStaticParams() {
+  const posts = await getAllPosts(); // Fetch all published posts
+  return posts.map((post) => ({ postId: post.id }));
 }
 
 const BlogPostPage: React.FC<BlogPostPageProps> = async ({ params }) => {
-  const resolvedParams = await params; // Await the params object
-  const post = await getPostById(resolvedParams.postId); // Use resolvedParams
+  const post = await getPostById(params.postId);
 
   if (!post) {
     notFound();
@@ -40,10 +44,29 @@ const BlogPostPage: React.FC<BlogPostPageProps> = async ({ params }) => {
   );
 };
 
+async function getAllPosts(): Promise<PostCardProps[]> {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts`, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+
+    const data = await response.json();
+    return data.posts as PostCardProps[];
+  } catch (error) {
+    console.error('Error in getAllPosts():', error);
+    return [];
+  }
+}
+
 async function getPostById(postId: string): Promise<PostCardProps | null> {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts/${postId}`, {
       headers: { 'Content-Type': 'application/json' },
+      next: { revalidate: 60 }, // Revalidate every 60 seconds
     });
 
     if (!response.ok) {
@@ -59,9 +82,8 @@ async function getPostById(postId: string): Promise<PostCardProps | null> {
   }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ postId: string }> }) {
-  const resolvedParams = await params; // Await the params object
-  const post = await getPostById(resolvedParams.postId); // Use resolvedParams
+export async function generateMetadata({ params }: { params: { postId: string } }) {
+  const post = await getPostById(params.postId);
 
   return {
     title: post?.title || 'Post Not Found',
