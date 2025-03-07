@@ -11,8 +11,8 @@ interface BlogPostPageProps {
 }
 
 const BlogPostPage: React.FC<BlogPostPageProps> = async ({ params }) => {
-  const { postId } = await params; // ✅ Await the Promise
-  const post = await getPostById(postId);
+  const resolvedParams = await params; // Await the params object
+  const post = await getPostById(resolvedParams.postId); // Use resolvedParams
 
   if (!post) {
     notFound();
@@ -40,20 +40,10 @@ const BlogPostPage: React.FC<BlogPostPageProps> = async ({ params }) => {
   );
 };
 
-
 async function getPostById(postId: string): Promise<PostCardProps | null> {
   try {
-    // Use proper URL construction with protocol
-    const baseUrl = process.env.NODE_ENV === 'production'
-      ? 'https://whisper-ghana-blog.vercel.app'
-      : 'http://localhost:3000';
-
-    // Use URL constructor for proper encoding
-    const url = new URL(`${baseUrl}/api/posts/${postId}`);
-
-    const response = await fetch(url.toString(), {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts/${postId}`, {
       headers: { 'Content-Type': 'application/json' },
-      next: { revalidate: 60 } // Optional revalidation
     });
 
     if (!response.ok) {
@@ -62,19 +52,21 @@ async function getPostById(postId: string): Promise<PostCardProps | null> {
     }
 
     const data = await response.json();
-    
-    // Validate response structure
-    if (!data?.post) {
-      throw new Error('Invalid post response structure');
-    }
-
     return data.post as PostCardProps;
-
   } catch (error) {
     console.error('Error in getPostById():', error);
     return null;
   }
 }
 
+export async function generateMetadata({ params }: { params: Promise<{ postId: string }> }) {
+  const resolvedParams = await params; // Await the params object
+  const post = await getPostById(resolvedParams.postId); // Use resolvedParams
+
+  return {
+    title: post?.title || 'Post Not Found',
+    description: post?.description || 'This post does not exist.',
+  };
+}
 
 export default BlogPostPage;
