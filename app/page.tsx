@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { getRecentPosts } from '@/utils/api';
+import { TiptapContent } from './types';
 
 export interface PostCardProps {
   id: string;
@@ -13,7 +14,7 @@ export interface PostCardProps {
   category: string;
   tags: string[]; // Array of tags
   author: string; // Author name
-  content: any; // Tiptap JSON content (refine later if needed)
+  content: TiptapContent; // Tiptap JSON content (refine later if needed)
   minutesToRead: number;
   createdAt: string; // ISO date string
   published_at: string | null; // Published date (nullable for drafts)
