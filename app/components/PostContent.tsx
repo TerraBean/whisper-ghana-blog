@@ -4,7 +4,6 @@
 
 import React from 'react';
 import { generateHTML } from '@tiptap/html';
-import Image from 'next/image'; // Import Next.js Image component
 import DOMPurify from 'dompurify'; // For sanitizing HTML
 import {
   StarterKit,
