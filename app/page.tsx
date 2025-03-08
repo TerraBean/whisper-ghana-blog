@@ -1,23 +1,23 @@
 // app/page.tsx
 
-import React from 'react'; // useState and useEffect are removed
+import React from 'react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
-import { TiptapContent } from './types';
+import { getRecentPosts } from '@/utils/api';
 
-export interface PostCardProps { // Ensure 'export' is still there
+export interface PostCardProps {
   id: string;
   title: string;
   description: string;
-  status: 'draft' | 'published'; // Add status property to the interface
+  status: 'draft' | 'published'; // Ensure strict typing for status
   category: string;
-  tags: string[]; // Add tags property to the interface to match database
-  author: string;     // Add author property
-  content: TiptapContent;    // Add content property (type 'any' for Tiptap JSON for now, refine later if needed)
+  tags: string[]; // Array of tags
+  author: string; // Author name
+  content: any; // Tiptap JSON content (refine later if needed)
   minutesToRead: number;
-  createdAt: string;
-  published_at: string | null; // Add publishedAt property (can be null for drafts)
-  scheduled_publish_at: string | null; // Add scheduledPublishedAt property (can be null for drafts)
+  createdAt: string; // ISO date string
+  published_at: string | null; // Published date (nullable for drafts)
+  scheduled_publish_at: string | null; // Scheduled publish date (nullable)
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -45,16 +45,24 @@ const PostCard: React.FC<PostCardProps> = ({
   );
 };
 
-
 // --- BlogIndexPage Component (Now as Server Component for SSG) ---
-const BlogIndexPage = async () => { // Marked as async to fetch data
-  const posts = await getRecentPosts(); // Fetch posts data on server
+const BlogIndexPage = async () => {
+  const posts = await getRecentPosts();
+
+  if (!posts || posts.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Welcome to Our Blog</h1>
+        <p className="text-gray-600">No posts available at the moment. Please check back later!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">Welcome to Our Blog</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {posts.map(post => (
+        {posts.map((post) => (
           <PostCard key={post.id} {...post} />
         ))}
       </div>
@@ -63,50 +71,6 @@ const BlogIndexPage = async () => { // Marked as async to fetch data
 };
 
 // --- Function to Fetch Recent Posts (Server-Side) ---
-async function getRecentPosts(): Promise<PostCardProps[]> {
-  // Use production URL directly for Vercel deployments
-  const baseUrl = process.env.NODE_ENV === 'production'
-    ? 'https://whisper-ghana-blog.vercel.app' // Hardcode your production URL
-    : 'http://localhost:3000';
 
-  try {
-    const url = new URL(`${baseUrl}/api/posts/recent`);
-    url.searchParams.append('status', 'published');
-
-    // Add debug logs
-    console.log('Fetching from:', url.toString());
-    const startTime = Date.now();
-
-    const response = await fetch(url.toString(), {
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store' // Bypass any cache issues
-    });
-
-    const responseTime = Date.now() - startTime;
-    console.log(`Response status: ${response.status} (${responseTime}ms)`);
-
-    // Get response text first for error handling
-    const responseText = await response.text();
-    
-    // Check for HTML in response
-    if (responseText.startsWith('<!DOCTYPE')) {
-      console.error('Received HTML response:', responseText.slice(0, 200));
-      throw new Error('Unexpected HTML response from API');
-    }
-
-    const data = JSON.parse(responseText);
-    
-    // Validate response structure
-    if (!data?.posts || !Array.isArray(data.posts)) {
-      throw new Error('Invalid posts array in response');
-    }
-
-    return data.posts as PostCardProps[];
-
-  } catch (error) {
-    console.error('Critical error in getRecentPosts:', error);
-    return []; // Return empty array to prevent page crash
-  }
-}
 
 export default BlogIndexPage;
