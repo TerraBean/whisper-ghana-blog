@@ -1,13 +1,13 @@
 // app/blog/[postId]/page.tsx
 
 import React from 'react';
-import { notFound } from 'next/navigation'; // For handling 404 errors
+import { notFound } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
-import { PostCardProps } from '@/app/page'; // Assuming PostCardProps is defined in app/page.tsx
+import { PostCardProps } from '@/app/page';
 import PostContent from '@/app/components/PostContent';
 
 interface BlogPostPageProps {
-  params: Awaited<{ postId: string }>; // Ensures compatibility with Promise-based params
+  params: Promise<{ postId: string }>; // Treat params as a Promise
 }
 
 export async function generateStaticParams() {
@@ -16,7 +16,8 @@ export async function generateStaticParams() {
 }
 
 const BlogPostPage: React.FC<BlogPostPageProps> = async ({ params }) => {
-  const post = await getPostById(params.postId);
+  const resolvedParams = await params; // Explicitly await params
+  const post = await getPostById(resolvedParams.postId);
 
   if (!post) {
     notFound();
@@ -66,7 +67,7 @@ async function getPostById(postId: string): Promise<PostCardProps | null> {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts/${postId}`, {
       headers: { 'Content-Type': 'application/json' },
-      next: { revalidate: 60 }, // Revalidate every 60 seconds
+      next: { revalidate: 60 },
     });
 
     if (!response.ok) {
@@ -82,8 +83,9 @@ async function getPostById(postId: string): Promise<PostCardProps | null> {
   }
 }
 
-export async function generateMetadata({ params }: { params: Awaited<{ postId: string }> }) {
-  const post = await getPostById(params.postId);
+export async function generateMetadata({ params }: { params: Promise<{ postId: string }> }) {
+  const resolvedParams = await params; // Explicitly await params
+  const post = await getPostById(resolvedParams.postId);
 
   return {
     title: post?.title || 'Post Not Found',
