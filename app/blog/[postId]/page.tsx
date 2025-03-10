@@ -40,6 +40,7 @@ async function prerenderContent(content: PostCardProps['content']): Promise<stri
   if (process.env.NEXT_PHASE !== 'phase-production-build') {
     throw new Error('prerenderContent should only run during build phase');
   }
+
   const generateHTMLModule = await import('@tiptap/html');
   const DOMPurifyModule = await import('dompurify');
   const JSDOMModule = await import('jsdom');
@@ -57,7 +58,7 @@ async function prerenderContent(content: PostCardProps['content']): Promise<stri
   const lowlightModule = await import('lowlight');
 
   const generateHTML = generateHTMLModule.generateHTML;
-  const DOMPurify = DOMPurifyModule.default;
+  const DOMPurify = DOMPurifyModule.default; // Ensure default import
   const JSDOM = JSDOMModule.JSDOM;
   const StarterKit = StarterKitModule.default;
   const TiptapLink = TiptapLinkModule.default;
@@ -90,10 +91,13 @@ async function prerenderContent(content: PostCardProps['content']): Promise<stri
     Placeholder.configure({ placeholder: 'Start typing...' }),
   ];
 
+  // Configure DOMPurify with jsdom
   const window = new JSDOM('').window;
   const purify = DOMPurify(window);
+
   const rawHtml = generateHTML(content, extensions);
-  return purify.sanitize(rawHtml);
+  const sanitizedHtml = purify.sanitize(rawHtml); // Use the sanitize method
+  return sanitizedHtml;
 }
 
 export async function generateStaticParams() {
