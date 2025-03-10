@@ -4,6 +4,21 @@ import { notFound } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import { PostCardProps } from '@/app/page';
 import PostContentWrapper from '@/app/components/PostContentWrapper';
+import { generateHTML } from '@tiptap/html';
+import DOMPurify from 'dompurify';
+import { JSDOM } from 'jsdom';
+import { StarterKit } from '@tiptap/starter-kit';
+import TiptapLink from '@tiptap/extension-link';
+import TiptapImage from '@tiptap/extension-image';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import Placeholder from '@tiptap/extension-placeholder';
+import { createLowlight } from 'lowlight';
 
 // Extend PostCardProps to include pre-rendered HTML for build phase
 interface StaticPost extends PostCardProps {
@@ -13,6 +28,25 @@ interface StaticPost extends PostCardProps {
 interface BlogPostPageProps {
   params: Promise<{ postId: string }>;
 }
+
+const lowlight = createLowlight({});
+
+const extensions = [
+  StarterKit.configure({
+    codeBlock: false,
+    blockquote: { HTMLAttributes: { class: 'blockquote' } },
+  }),
+  TiptapLink.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
+  TiptapImage.configure({ inline: true, allowBase64: true }),
+  Underline,
+  TextAlign.configure({ types: ['heading', 'paragraph'] }),
+  CodeBlockLowlight.configure({ lowlight }),
+  Table.configure({ resizable: true, HTMLAttributes: { class: 'table' }, allowTableNodeSelection: true }),
+  TableRow,
+  TableCell,
+  TableHeader,
+  Placeholder.configure({ placeholder: 'Start typing...' }),
+];
 
 // Mock data with pre-rendered content for builds only
 const mockPosts: StaticPost[] = process.env.NEXT_PHASE === 'phase-production-build'
@@ -46,40 +80,6 @@ function prerenderContent(content: PostCardProps['content']): string {
   if (process.env.NEXT_PHASE !== 'phase-production-build') {
     throw new Error('prerenderContent should only run during build phase');
   }
-  const { generateHTML } = require('@tiptap/html');
-  const { JSDOM } = require('jsdom');
-  const DOMPurify = require('dompurify');
-  const { StarterKit } = require('@tiptap/starter-kit');
-  const TiptapLink = require('@tiptap/extension-link');
-  const TiptapImage = require('@tiptap/extension-image');
-  const Underline = require('@tiptap/extension-underline');
-  const TextAlign = require('@tiptap/extension-text-align');
-  const CodeBlockLowlight = require('@tiptap/extension-code-block-lowlight');
-  const Table = require('@tiptap/extension-table');
-  const TableRow = require('@tiptap/extension-table-row');
-  const TableCell = require('@tiptap/extension-table-cell');
-  const TableHeader = require('@tiptap/extension-table-header');
-  const Placeholder = require('@tiptap/extension-placeholder');
-  const { createLowlight } = require('lowlight');
-
-  const lowlight = createLowlight({});
-  const extensions = [
-    StarterKit.configure({
-      codeBlock: false,
-      blockquote: { HTMLAttributes: { class: 'blockquote' } },
-    }),
-    TiptapLink.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
-    TiptapImage.configure({ inline: true, allowBase64: true }),
-    Underline,
-    TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    CodeBlockLowlight.configure({ lowlight }),
-    Table.configure({ resizable: true, HTMLAttributes: { class: 'table' }, allowTableNodeSelection: true }),
-    TableRow,
-    TableCell,
-    TableHeader,
-    Placeholder.configure({ placeholder: 'Start typing...' }),
-  ];
-
   const window = new JSDOM('').window;
   const purify = DOMPurify(window);
   const rawHtml = generateHTML(content, extensions);
