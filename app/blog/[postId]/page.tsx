@@ -4,21 +4,6 @@ import { notFound } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import { PostCardProps } from '@/app/page';
 import PostContentWrapper from '@/app/components/PostContentWrapper';
-import { generateHTML } from '@tiptap/html';
-import DOMPurify from 'dompurify';
-import { JSDOM } from 'jsdom';
-import { StarterKit } from '@tiptap/starter-kit';
-import TiptapLink from '@tiptap/extension-link';
-import TiptapImage from '@tiptap/extension-image';
-import Underline from '@tiptap/extension-underline';
-import TextAlign from '@tiptap/extension-text-align';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import Table from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import TableCell from '@tiptap/extension-table-cell';
-import TableHeader from '@tiptap/extension-table-header';
-import Placeholder from '@tiptap/extension-placeholder';
-import { createLowlight } from 'lowlight';
 
 // Extend PostCardProps to include pre-rendered HTML for build phase
 interface StaticPost extends PostCardProps {
@@ -29,57 +14,66 @@ interface BlogPostPageProps {
   params: Promise<{ postId: string }>;
 }
 
-const lowlight = createLowlight({});
-
-const extensions = [
-  StarterKit.configure({
-    codeBlock: false,
-    blockquote: { HTMLAttributes: { class: 'blockquote' } },
-  }),
-  TiptapLink.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
-  TiptapImage.configure({ inline: true, allowBase64: true }),
-  Underline,
-  TextAlign.configure({ types: ['heading', 'paragraph'] }),
-  CodeBlockLowlight.configure({ lowlight }),
-  Table.configure({ resizable: true, HTMLAttributes: { class: 'table' }, allowTableNodeSelection: true }),
-  TableRow,
-  TableCell,
-  TableHeader,
-  Placeholder.configure({ placeholder: 'Start typing...' }),
+// Mock data without pre-rendered content (filled during build)
+const mockPostsBase: PostCardProps[] = [
+  {
+    id: 'eb6958c7-2a84-4e50-8142-6ff6cd7a16e4',
+    title: 'Test Post',
+    description: 'A sample blog post for testing.',
+    status: 'published',
+    category: 'Test',
+    tags: ['test', 'sample'],
+    author: 'Test Author',
+    content: {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello, world!' }] }],
+    },
+    minutesToRead: 5,
+    createdAt: '2025-03-01T00:00:00Z',
+    published_at: '2025-03-01T00:00:00Z',
+    scheduled_publish_at: null,
+  },
 ];
-
-// Mock data with pre-rendered content for builds only
-const mockPosts: StaticPost[] = process.env.NEXT_PHASE === 'phase-production-build'
-  ? [
-      {
-        id: 'eb6958c7-2a84-4e50-8142-6ff6cd7a16e4',
-        title: 'Test Post',
-        description: 'A sample blog post for testing.',
-        status: 'published',
-        category: 'Test',
-        tags: ['test', 'sample'],
-        author: 'Test Author',
-        content: {
-          type: 'doc',
-          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello, world!' }] }],
-        },
-        minutesToRead: 5,
-        createdAt: '2025-03-01T00:00:00Z',
-        published_at: '2025-03-01T00:00:00Z',
-        scheduled_publish_at: null,
-        prerenderedContent: prerenderContent({
-          type: 'doc',
-          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello, world!' }] }],
-        }),
-      },
-    ]
-  : [];
 
 // Pre-render content during build only
 function prerenderContent(content: PostCardProps['content']): string {
   if (process.env.NEXT_PHASE !== 'phase-production-build') {
     throw new Error('prerenderContent should only run during build phase');
   }
+  const { generateHTML } = require('@tiptap/html');
+  const DOMPurify = require('dompurify');
+  const { JSDOM } = require('jsdom');
+  const { StarterKit } = require('@tiptap/starter-kit');
+  const TiptapLink = require('@tiptap/extension-link');
+  const TiptapImage = require('@tiptap/extension-image');
+  const Underline = require('@tiptap/extension-underline');
+  const TextAlign = require('@tiptap/extension-text-align');
+  const CodeBlockLowlight = require('@tiptap/extension-code-block-lowlight');
+  const Table = require('@tiptap/extension-table');
+  const TableRow = require('@tiptap/extension-table-row');
+  const TableCell = require('@tiptap/extension-table-cell');
+  const TableHeader = require('@tiptap/extension-table-header');
+  const Placeholder = require('@tiptap/extension-placeholder');
+  const { createLowlight } = require('lowlight');
+
+  const lowlight = createLowlight({});
+  const extensions = [
+    StarterKit.configure({
+      codeBlock: false,
+      blockquote: { HTMLAttributes: { class: 'blockquote' } },
+    }),
+    TiptapLink.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
+    TiptapImage.configure({ inline: true, allowBase64: true }),
+    Underline,
+    TextAlign.configure({ types: ['heading', 'paragraph'] }),
+    CodeBlockLowlight.configure({ lowlight }),
+    Table.configure({ resizable: true, HTMLAttributes: { class: 'table' }, allowTableNodeSelection: true }),
+    TableRow,
+    TableCell,
+    TableHeader,
+    Placeholder.configure({ placeholder: 'Start typing...' }),
+  ];
+
   const window = new JSDOM('').window;
   const purify = DOMPurify(window);
   const rawHtml = generateHTML(content, extensions);
@@ -88,6 +82,12 @@ function prerenderContent(content: PostCardProps['content']): string {
 
 export async function generateStaticParams() {
   const posts = await getAllPosts();
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return posts.map((post) => {
+      const prerenderedContent = prerenderContent(post.content);
+      return { postId: post.id, prerenderedContent };
+    });
+  }
   return posts.map((post) => ({ postId: post.id }));
 }
 
@@ -126,7 +126,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
 async function getAllPosts(): Promise<StaticPost[]> {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
-    return mockPosts;
+    return mockPostsBase.map((post) => ({
+      ...post,
+      prerenderedContent: prerenderContent(post.content),
+    }));
   }
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts`, {
@@ -147,7 +150,8 @@ async function getAllPosts(): Promise<StaticPost[]> {
 
 async function getPostById(postId: string): Promise<StaticPost | null> {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
-    return mockPosts.find((post) => post.id === postId) || null;
+    const post = mockPostsBase.find((p) => p.id === postId);
+    return post ? { ...post, prerenderedContent: prerenderContent(post.content) } : null;
   }
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts/${postId}`, {
