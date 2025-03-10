@@ -6,7 +6,7 @@ import { PostCardProps } from '@/app/page';
 import PostContentWrapper from '@/app/components/PostContentWrapper';
 import { generateHTML } from '@tiptap/html';
 import DOMPurify from 'dompurify';
-import { JSDOM } from 'jsdom'; // Add jsdom for server-side DOM
+import { JSDOM } from 'jsdom';
 import { StarterKit } from '@tiptap/starter-kit';
 import TiptapLink from '@tiptap/extension-link';
 import TiptapImage from '@tiptap/extension-image';
@@ -66,6 +66,17 @@ const mockPosts: PostCardProps[] = process.env.NEXT_PHASE === 'phase-production-
     ]
   : [];
 
+// Pre-generate HTML for static builds
+async function pregenerateContent(content: PostCardProps['content']): Promise<string> {
+  if (process.env.NEXT_PHASE !== 'phase-production-build') {
+    throw new Error('This function should only run during build');
+  }
+  const window = new JSDOM('').window;
+  const purify = DOMPurify(window);
+  const rawHtml = generateHTML(content, extensions);
+  return purify.sanitize(rawHtml);
+}
+
 export async function generateStaticParams() {
   const posts = await getAllPosts();
   return posts.map((post) => ({ postId: post.id }));
@@ -80,14 +91,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     ? format(parseISO(post.published_at), 'MMM d, yyyy')
     : 'Draft';
 
-  // Pre-generate HTML for static builds
-  let contentHtml: string = '';
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
-    const window = new JSDOM('').window;
-    const purify = DOMPurify(window);
-    const rawHtml = generateHTML(post.content, extensions);
-    contentHtml = purify.sanitize(rawHtml);
-  }
+  // Use pre-generated HTML only during build
+  const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const contentHtml = isBuildPhase ? await pregenerateContent(post.content) : null;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -100,8 +106,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <span>{post.minutesToRead} min read</span>
         </div>
         <div className="prose max-w-none">
-          {process.env.NEXT_PHASE === 'phase-production-build' ? (
-            <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
+          {isBuildPhase ? (
+            <div dangerouslySetInnerHTML={{ __html: contentHtml! }} />
           ) : (
             <PostContentWrapper content={post.content} />
           )}
@@ -120,7 +126,10 @@ async function getAllPosts(): Promise<PostCardProps[]> {
       headers: { 'Content-Type': 'application/json' },
       cache: 'force-cache',
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      console.error(`Failed to fetch posts: HTTP ${response.status} - ${await response.text()}`);
+      throw new Error(`HTTP ${response.status}`);
+    }
     const data = await response.json();
     return data.posts as PostCardProps[];
   } catch (error) {
@@ -140,6 +149,7 @@ async function getPostById(postId: string): Promise<PostCardProps | null> {
     });
     if (!response.ok) {
       if (response.status === 404) return null;
+      console.error(`Failed to fetch post ${postId}: HTTP ${response.status} - ${await response.text()}`);
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
