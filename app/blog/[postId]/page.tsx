@@ -1,27 +1,46 @@
 // app/blog/[postId]/page.tsx
-
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import { PostCardProps } from '@/app/page';
-import PostContent from '@/app/components/PostContent';
+import PostContentWrapper from '@/app/components/PostContentWrapper';
 
 interface BlogPostPageProps {
-  params: Promise<{ postId: string }>; // Treat params as a Promise
+  params: Promise<{ postId: string }>;
 }
 
+// Mock data for builds only (not dev or prod)
+const mockPosts: PostCardProps[] = process.env.NEXT_PHASE === 'phase-production-build'
+  ? [
+      {
+        id: 'eb6958c7-2a84-4e50-8142-6ff6cd7a16e4',
+        title: 'Test Post',
+        description: 'A sample blog post for testing.',
+        status: 'published',
+        category: 'Test',
+        tags: ['test', 'sample'],
+        author: 'Test Author',
+        content: {
+          type: 'doc',
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello, world!' }] }],
+        },
+        minutesToRead: 5,
+        createdAt: '2025-03-01T00:00:00Z',
+        published_at: '2025-03-01T00:00:00Z',
+        scheduled_publish_at: null,
+      },
+    ]
+  : [];
+
 export async function generateStaticParams() {
-  const posts = await getAllPosts(); // Fetch all published posts
+  const posts = await getAllPosts();
   return posts.map((post) => ({ postId: post.id }));
 }
 
-const BlogPostPage: React.FC<BlogPostPageProps> = async ({ params }) => {
-  const resolvedParams = await params; // Explicitly await params
-  const post = await getPostById(resolvedParams.postId);
-
-  if (!post) {
-    notFound();
-  }
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const { postId } = await params;
+  const post = await getPostById(postId);
+  if (!post) notFound();
 
   const formattedDate = post.published_at
     ? format(parseISO(post.published_at), 'MMM d, yyyy')
@@ -38,23 +57,24 @@ const BlogPostPage: React.FC<BlogPostPageProps> = async ({ params }) => {
           <span>{post.minutesToRead} min read</span>
         </div>
         <div className="prose max-w-none">
-          <PostContent content={post.content} />
+          <PostContentWrapper content={post.content} />
         </div>
       </article>
     </div>
   );
-};
+}
 
 async function getAllPosts(): Promise<PostCardProps[]> {
+  // Use mocks only during build phase
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return mockPosts;
+  }
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts`, {
       headers: { 'Content-Type': 'application/json' },
+      cache: 'force-cache',
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-    }
-
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     return data.posts as PostCardProps[];
   } catch (error) {
@@ -64,17 +84,19 @@ async function getAllPosts(): Promise<PostCardProps[]> {
 }
 
 async function getPostById(postId: string): Promise<PostCardProps | null> {
+  // Use mocks only during build phase
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return mockPosts.find((post) => post.id === postId) || null;
+  }
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts/${postId}`, {
       headers: { 'Content-Type': 'application/json' },
       next: { revalidate: 60 },
     });
-
     if (!response.ok) {
       if (response.status === 404) return null;
-      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      throw new Error(`HTTP ${response.status}`);
     }
-
     const data = await response.json();
     return data.post as PostCardProps;
   } catch (error) {
@@ -84,13 +106,10 @@ async function getPostById(postId: string): Promise<PostCardProps | null> {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ postId: string }> }) {
-  const resolvedParams = await params; // Explicitly await params
-  const post = await getPostById(resolvedParams.postId);
-
+  const { postId } = await params;
+  const post = await getPostById(postId);
   return {
     title: post?.title || 'Post Not Found',
     description: post?.description || 'This post does not exist.',
   };
 }
-
-export default BlogPostPage;
