@@ -6,10 +6,10 @@ import { PostCardProps } from '@/app/page';
 import PostContentWrapper from '@/app/components/PostContentWrapper';
 
 interface BlogPostPageProps {
-  params: Promise<{ postId: string }>;
+  params: Promise<{ postId: string }>; // Correct type for Next.js 15.1.6 dynamic route
 }
 
-// Mock data without pre-rendered content
+// Mock data
 const mockPostsBase: PostCardProps[] = [
   {
     id: 'eb6958c7-2a84-4e50-8142-6ff6cd7a16e4',
@@ -36,7 +36,7 @@ export async function generateStaticParams() {
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const { postId } = await params;
+  const { postId } = await params; // Await the params promise
   const post = await getPostById(postId);
   if (!post) notFound();
 
@@ -101,8 +101,8 @@ async function getPostById(postId: string): Promise<PostCardProps | null> {
   }
 }
 
-export async function generateMetadata({ params }: { params: { postId: string } }) {
-  const { postId } = params;
+export async function generateMetadata({ params }: { params: Promise<{ postId: string }> }) {
+  const { postId } = await params; // Await params here too
   const post = await getPostById(postId);
   return {
     title: post?.title || 'Post Not Found',
