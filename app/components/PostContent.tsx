@@ -2,12 +2,12 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { generateHTML } from '@tiptap/html';
-import DOMPurify from 'dompurify'; // For sanitizing HTML
 import {
   StarterKit,
-} from '@tiptap/starter-kit'; // Only include extensions bundled in starter-kit
+} from '@tiptap/starter-kit';
 import BulletList from '@tiptap/extension-bullet-list';
 import ListItem from '@tiptap/extension-list-item';
 import TiptapLink from '@tiptap/extension-link';
@@ -33,54 +33,70 @@ interface PostContentProps {
 }
 
 const PostContent: React.FC<PostContentProps> = ({ content }) => {
-  // Validate content
-  if (!content || !content.type || !Array.isArray(content.content)) {
-    return <div className="text-gray-600">No content available.</div>;
-  }
+  const [sanitizedContent, setSanitizedContent] = useState<string>('');
 
-  // Generate HTML from Tiptap content
-  const rawHtml = generateHTML(content, [
-    StarterKit.configure({
-      codeBlock: false,
-      blockquote: { HTMLAttributes: { class: 'blockquote' } },
-    }),
-    BulletList,
-    ListItem,
-    TiptapLink.configure({
-      openOnClick: false,
-      HTMLAttributes: {
-        rel: 'noopener noreferrer',
-        target: '_blank',
-      },
-    }),
-    TiptapImage.configure({
-      inline: true,
-      allowBase64: true,
-    }),
-    Strike,
-    Underline,
-    OrderedList,
-    TextAlign.configure({
-      types: ['heading', 'paragraph'],
-    }),
-    CodeBlockLowlight.configure({ lowlight }),
-    Table.configure({
-      resizable: true,
-      HTMLAttributes: { class: 'table' },
-      allowTableNodeSelection: true,
-    }),
-    TableRow,
-    TableCell,
-    TableHeader,
-    HorizontalRule,
-    Placeholder.configure({ placeholder: 'Start typing...' }),
-  ]);
+  useEffect(() => {
+    const sanitizeContent = async () => {
+      // Generate raw HTML from Tiptap content
+      const rawHtml = generateHTML(content, [
+        StarterKit.configure({
+          codeBlock: false,
+          blockquote: { HTMLAttributes: { class: 'blockquote' } },
+        }),
+        BulletList,
+        ListItem,
+        TiptapLink.configure({
+          openOnClick: false,
+          HTMLAttributes: {
+            rel: 'noopener noreferrer',
+            target: '_blank',
+          },
+        }),
+        TiptapImage.configure({
+          inline: true,
+          allowBase64: true,
+        }),
+        Strike,
+        Underline,
+        OrderedList,
+        TextAlign.configure({
+          types: ['heading', 'paragraph'],
+        }),
+        CodeBlockLowlight.configure({ lowlight }),
+        Table.configure({
+          resizable: true,
+          HTMLAttributes: { class: 'table' },
+          allowTableNodeSelection: true,
+        }),
+        TableRow,
+        TableCell,
+        TableHeader,
+        HorizontalRule,
+        Placeholder.configure({ placeholder: 'Start typing...' }),
+      ]);
 
-  // Sanitize HTML to prevent XSS attacks
-  const sanitizedHtml = DOMPurify.sanitize(rawHtml);
+      // Call the API route to sanitize the HTML
+      const response = await fetch('/api/sanitize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ html: rawHtml }),
+      });
+
+      if (response.ok) {
+        const { sanitizedHtml } = await response.json();
+        setSanitizedContent(sanitizedHtml);
+      } else {
+        console.error('Failed to sanitize content');
+      }
+    };
+
+    sanitizeContent();
+  }, [content]);
 
   // Replace <img> tags with Next.js Image component
-  const processedHtml = sanitizedHtml.replace(
+  const processedHtml = sanitizedContent.replace(
     /<img src="([^"]+)" alt="([^"]*)"\/?>/g,
     (_, src, alt) => `
       <figure class="relative w-full h-64 my-4">
