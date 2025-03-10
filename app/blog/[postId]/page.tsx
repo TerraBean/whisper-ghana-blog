@@ -98,12 +98,6 @@ async function prerenderContent(content: PostCardProps['content']): Promise<stri
 
 export async function generateStaticParams() {
   const posts = await getAllPosts();
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
-    return posts.map((post) => {
-      const prerenderedContent = prerenderContent(post.content);
-      return { postId: post.id, prerenderedContent };
-    });
-  }
   return posts.map((post) => ({ postId: post.id }));
 }
 
@@ -142,20 +136,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
 async function getAllPosts(): Promise<StaticPost[]> {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
-    return mockPostsBase.map((post) => ({
-      ...post,
-      prerenderedContent: prerenderContent(post.content),
-    }));
+    return await Promise.all(
+      mockPostsBase.map(async (post) => {
+        const prerenderedContent = await prerenderContent(post.content);
+        return { ...post, prerenderedContent };
+      })
+    );
   }
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts`, {
       headers: { 'Content-Type': 'application/json' },
       cache: 'force-cache',
     });
-    if (!response.ok) {
-      console.error(`Failed to fetch posts: HTTP ${response.status} - ${await response.text()}`);
-      throw new Error(`HTTP ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     return data.posts as StaticPost[];
   } catch (error) {
@@ -167,7 +160,11 @@ async function getAllPosts(): Promise<StaticPost[]> {
 async function getPostById(postId: string): Promise<StaticPost | null> {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
     const post = mockPostsBase.find((p) => p.id === postId);
-    return post ? { ...post, prerenderedContent: prerenderContent(post.content) } : null;
+    if (post) {
+      const prerenderedContent = await prerenderContent(post.content);
+      return { ...post, prerenderedContent };
+    }
+    return null;
   }
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts/${postId}`, {
@@ -176,7 +173,6 @@ async function getPostById(postId: string): Promise<StaticPost | null> {
     });
     if (!response.ok) {
       if (response.status === 404) return null;
-      console.error(`Failed to fetch post ${postId}: HTTP ${response.status} - ${await response.text()}`);
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
