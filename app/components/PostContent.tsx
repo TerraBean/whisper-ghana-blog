@@ -3,7 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { generateHTML } from '@tiptap/html';
-import DOMPurify from 'dompurify';
+import DOMPurify from 'isomorphic-dompurify'; // Replace with isomorphic version
 import { StarterKit } from '@tiptap/starter-kit';
 import TiptapLink from '@tiptap/extension-link';
 import TiptapImage from '@tiptap/extension-image';
@@ -48,7 +48,7 @@ const PostContent: React.FC<PostContentProps> = ({ content }) => {
     }
 
     const rawHtml = generateHTML(content, extensions);
-    const sanitizedHtml = DOMPurify.sanitize(rawHtml);
+    const sanitizedHtml = DOMPurify.sanitize(rawHtml); // Now works on server and client
     return sanitizedHtml.replace(
       /<img src="([^"]+)" alt="([^"]*)"\/?>/g,
       (_, src, alt) => `

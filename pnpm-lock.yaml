@@ -83,6 +83,9 @@ importers:
       dompurify:
         specifier: ^3.2.4
         version: 3.2.4
+      isomorphic-dompurify:
+        specifier: ^2.22.0
+        version: 2.22.0(bufferutil@4.0.9)
       jsdom:
         specifier: ^26.0.0
         version: 26.0.0(bufferutil@4.0.9)
@@ -1525,6 +1528,10 @@ packages:
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
+
+  isomorphic-dompurify@2.22.0:
+    resolution: {integrity: sha512-A2xsDNST1yB94rErEnwqlzSvGllCJ4e8lDMe1OWBH2hvpfc/2qzgMEiDshTO1HwO+PIDTiYeOc7ZDB7Ds49BOg==}
+    engines: {node: '>=18'}
 
   iterator.prototype@1.1.5:
     resolution: {integrity: sha512-H0dkQoCa3b2VEeKQBOxFph+JAbcrQdE7KC0UkqwpLmv2EC4P41QXP+rqo9wYodACiG5/WM5s9oDApTU8utwj9g==}
@@ -3948,6 +3955,16 @@ snapshots:
   isarray@2.0.5: {}
 
   isexe@2.0.0: {}
+
+  isomorphic-dompurify@2.22.0(bufferutil@4.0.9):
+    dependencies:
+      dompurify: 3.2.4
+      jsdom: 26.0.0(bufferutil@4.0.9)
+    transitivePeerDependencies:
+      - bufferutil
+      - canvas
+      - supports-color
+      - utf-8-validate
 
   iterator.prototype@1.1.5:
     dependencies:
