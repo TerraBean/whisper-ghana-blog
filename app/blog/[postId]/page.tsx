@@ -6,7 +6,7 @@ import { PostCardProps } from '@/app/page';
 import PostContentWrapper from '@/app/components/PostContentWrapper';
 
 interface BlogPostPageProps {
-  params: { postId: string };
+  params: Promise<{ postId: string }>;
 }
 
 // Mock data without pre-rendered content
@@ -36,7 +36,7 @@ export async function generateStaticParams() {
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const { postId } = params;
+  const { postId } = await params;
   const post = await getPostById(postId);
   if (!post) notFound();
 
