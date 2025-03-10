@@ -5,16 +5,11 @@ import { format, parseISO } from 'date-fns';
 import { PostCardProps } from '@/app/page';
 import PostContentWrapper from '@/app/components/PostContentWrapper';
 
-// Extend PostCardProps to include pre-rendered HTML for build phase
-interface StaticPost extends PostCardProps {
-  prerenderedContent?: string;
-}
-
 interface BlogPostPageProps {
-  params: Promise<{ postId: string }>;
+  params: { postId: string };
 }
 
-// Mock data without pre-rendered content (filled during build)
+// Mock data without pre-rendered content
 const mockPostsBase: PostCardProps[] = [
   {
     id: 'eb6958c7-2a84-4e50-8142-6ff6cd7a16e4',
@@ -35,86 +30,19 @@ const mockPostsBase: PostCardProps[] = [
   },
 ];
 
-// Pre-render content during build only
-async function prerenderContent(content: PostCardProps['content']): Promise<string> {
-  if (process.env.NEXT_PHASE !== 'phase-production-build') {
-    throw new Error('prerenderContent should only run during build phase');
-  }
-
-  const generateHTMLModule = await import('@tiptap/html');
-  const DOMPurifyModule = await import('dompurify');
-  const JSDOMModule = await import('jsdom');
-  const StarterKitModule = await import('@tiptap/starter-kit');
-  const TiptapLinkModule = await import('@tiptap/extension-link');
-  const TiptapImageModule = await import('@tiptap/extension-image');
-  const UnderlineModule = await import('@tiptap/extension-underline');
-  const TextAlignModule = await import('@tiptap/extension-text-align');
-  const CodeBlockLowlightModule = await import('@tiptap/extension-code-block-lowlight');
-  const TableModule = await import('@tiptap/extension-table');
-  const TableRowModule = await import('@tiptap/extension-table-row');
-  const TableCellModule = await import('@tiptap/extension-table-cell');
-  const TableHeaderModule = await import('@tiptap/extension-table-header');
-  const PlaceholderModule = await import('@tiptap/extension-placeholder');
-  const lowlightModule = await import('lowlight');
-
-  const generateHTML = generateHTMLModule.generateHTML;
-  const DOMPurify = DOMPurifyModule.default; // Ensure default import
-  const JSDOM = JSDOMModule.JSDOM;
-  const StarterKit = StarterKitModule.default;
-  const TiptapLink = TiptapLinkModule.default;
-  const TiptapImage = TiptapImageModule.default;
-  const Underline = UnderlineModule.default;
-  const TextAlign = TextAlignModule.default;
-  const CodeBlockLowlight = CodeBlockLowlightModule.default;
-  const Table = TableModule.default;
-  const TableRow = TableRowModule.default;
-  const TableCell = TableCellModule.default;
-  const TableHeader = TableHeaderModule.default;
-  const Placeholder = PlaceholderModule.default;
-  const createLowlight = lowlightModule.createLowlight;
-
-  const lowlight = createLowlight();
-  const extensions = [
-    StarterKit.configure({
-      codeBlock: false,
-      blockquote: { HTMLAttributes: { class: 'blockquote' } },
-    }),
-    TiptapLink.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
-    TiptapImage.configure({ inline: true, allowBase64: true }),
-    Underline,
-    TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    CodeBlockLowlight.configure({ lowlight }),
-    Table.configure({ resizable: true, HTMLAttributes: { class: 'table' }, allowTableNodeSelection: true }),
-    TableRow,
-    TableCell,
-    TableHeader,
-    Placeholder.configure({ placeholder: 'Start typing...' }),
-  ];
-
-  // Configure DOMPurify with jsdom
-  const window = new JSDOM('').window;
-  const purify = DOMPurify(window);
-
-  const rawHtml = generateHTML(content, extensions);
-  const sanitizedHtml = purify.sanitize(rawHtml); // Use the sanitize method
-  return sanitizedHtml;
-}
-
 export async function generateStaticParams() {
   const posts = await getAllPosts();
   return posts.map((post) => ({ postId: post.id }));
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const { postId } = await params;
-  const post = await getPostById(postId) as StaticPost;
+  const { postId } = params;
+  const post = await getPostById(postId);
   if (!post) notFound();
 
   const formattedDate = post.published_at
     ? format(parseISO(post.published_at), 'MMM d, yyyy')
     : 'Draft';
-
-  const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -127,25 +55,16 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <span>{post.minutesToRead} min read</span>
         </div>
         <div className="prose max-w-none">
-          {isBuildPhase && post.prerenderedContent ? (
-            <div dangerouslySetInnerHTML={{ __html: post.prerenderedContent }} />
-          ) : (
-            <PostContentWrapper content={post.content} />
-          )}
+          <PostContentWrapper content={post.content} />
         </div>
       </article>
     </div>
   );
 }
 
-async function getAllPosts(): Promise<StaticPost[]> {
+async function getAllPosts(): Promise<PostCardProps[]> {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
-    return await Promise.all(
-      mockPostsBase.map(async (post) => {
-        const prerenderedContent = await prerenderContent(post.content);
-        return { ...post, prerenderedContent };
-      })
-    );
+    return mockPostsBase;
   }
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts`, {
@@ -154,21 +73,16 @@ async function getAllPosts(): Promise<StaticPost[]> {
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    return data.posts as StaticPost[];
+    return data.posts as PostCardProps[];
   } catch (error) {
     console.error('Error in getAllPosts():', error);
     return [];
   }
 }
 
-async function getPostById(postId: string): Promise<StaticPost | null> {
+async function getPostById(postId: string): Promise<PostCardProps | null> {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
-    const post = mockPostsBase.find((p) => p.id === postId);
-    if (post) {
-      const prerenderedContent = await prerenderContent(post.content);
-      return { ...post, prerenderedContent };
-    }
-    return null;
+    return mockPostsBase.find((p) => p.id === postId) || null;
   }
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts/${postId}`, {
@@ -180,15 +94,15 @@ async function getPostById(postId: string): Promise<StaticPost | null> {
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
-    return data.post as StaticPost;
+    return data.post as PostCardProps;
   } catch (error) {
     console.error('Error in getPostById():', error);
     return null;
   }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ postId: string }> }) {
-  const { postId } = await params;
+export async function generateMetadata({ params }: { params: { postId: string } }) {
+  const { postId } = params;
   const post = await getPostById(postId);
   return {
     title: post?.title || 'Post Not Found',
