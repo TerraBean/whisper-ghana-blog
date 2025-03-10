@@ -36,27 +36,43 @@ const mockPostsBase: PostCardProps[] = [
 ];
 
 // Pre-render content during build only
-function prerenderContent(content: PostCardProps['content']): string {
+async function prerenderContent(content: PostCardProps['content']): Promise<string> {
   if (process.env.NEXT_PHASE !== 'phase-production-build') {
     throw new Error('prerenderContent should only run during build phase');
   }
-  const { generateHTML } = require('@tiptap/html');
-  const DOMPurify = require('dompurify');
-  const { JSDOM } = require('jsdom');
-  const { StarterKit } = require('@tiptap/starter-kit');
-  const TiptapLink = require('@tiptap/extension-link');
-  const TiptapImage = require('@tiptap/extension-image');
-  const Underline = require('@tiptap/extension-underline');
-  const TextAlign = require('@tiptap/extension-text-align');
-  const CodeBlockLowlight = require('@tiptap/extension-code-block-lowlight');
-  const Table = require('@tiptap/extension-table');
-  const TableRow = require('@tiptap/extension-table-row');
-  const TableCell = require('@tiptap/extension-table-cell');
-  const TableHeader = require('@tiptap/extension-table-header');
-  const Placeholder = require('@tiptap/extension-placeholder');
-  const { createLowlight } = require('lowlight');
+  const generateHTMLModule = await import('@tiptap/html');
+  const DOMPurifyModule = await import('dompurify');
+  const JSDOMModule = await import('jsdom');
+  const StarterKitModule = await import('@tiptap/starter-kit');
+  const TiptapLinkModule = await import('@tiptap/extension-link');
+  const TiptapImageModule = await import('@tiptap/extension-image');
+  const UnderlineModule = await import('@tiptap/extension-underline');
+  const TextAlignModule = await import('@tiptap/extension-text-align');
+  const CodeBlockLowlightModule = await import('@tiptap/extension-code-block-lowlight');
+  const TableModule = await import('@tiptap/extension-table');
+  const TableRowModule = await import('@tiptap/extension-table-row');
+  const TableCellModule = await import('@tiptap/extension-table-cell');
+  const TableHeaderModule = await import('@tiptap/extension-table-header');
+  const PlaceholderModule = await import('@tiptap/extension-placeholder');
+  const lowlightModule = await import('lowlight');
 
-  const lowlight = createLowlight({});
+  const generateHTML = generateHTMLModule.generateHTML;
+  const DOMPurify = DOMPurifyModule.default;
+  const JSDOM = JSDOMModule.JSDOM;
+  const StarterKit = StarterKitModule.default;
+  const TiptapLink = TiptapLinkModule.default;
+  const TiptapImage = TiptapImageModule.default;
+  const Underline = UnderlineModule.default;
+  const TextAlign = TextAlignModule.default;
+  const CodeBlockLowlight = CodeBlockLowlightModule.default;
+  const Table = TableModule.default;
+  const TableRow = TableRowModule.default;
+  const TableCell = TableCellModule.default;
+  const TableHeader = TableHeaderModule.default;
+  const Placeholder = PlaceholderModule.default;
+  const createLowlight = lowlightModule.createLowlight;
+
+  const lowlight = createLowlight();
   const extensions = [
     StarterKit.configure({
       codeBlock: false,
