@@ -4,12 +4,46 @@ import { notFound } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import { PostCardProps } from '@/app/page';
 import PostContentWrapper from '@/app/components/PostContentWrapper';
+import { generateHTML } from '@tiptap/html';
+import DOMPurify from 'dompurify';
+import { JSDOM } from 'jsdom'; // Add jsdom for server-side DOM
+import { StarterKit } from '@tiptap/starter-kit';
+import TiptapLink from '@tiptap/extension-link';
+import TiptapImage from '@tiptap/extension-image';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import Placeholder from '@tiptap/extension-placeholder';
+import { createLowlight } from 'lowlight';
+
+const lowlight = createLowlight({});
+
+const extensions = [
+  StarterKit.configure({
+    codeBlock: false,
+    blockquote: { HTMLAttributes: { class: 'blockquote' } },
+  }),
+  TiptapLink.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
+  TiptapImage.configure({ inline: true, allowBase64: true }),
+  Underline,
+  TextAlign.configure({ types: ['heading', 'paragraph'] }),
+  CodeBlockLowlight.configure({ lowlight }),
+  Table.configure({ resizable: true, HTMLAttributes: { class: 'table' }, allowTableNodeSelection: true }),
+  TableRow,
+  TableCell,
+  TableHeader,
+  Placeholder.configure({ placeholder: 'Start typing...' }),
+];
 
 interface BlogPostPageProps {
   params: Promise<{ postId: string }>;
 }
 
-// Mock data for builds only (not dev or prod)
+// Mock data for builds only
 const mockPosts: PostCardProps[] = process.env.NEXT_PHASE === 'phase-production-build'
   ? [
       {
@@ -46,6 +80,15 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     ? format(parseISO(post.published_at), 'MMM d, yyyy')
     : 'Draft';
 
+  // Pre-generate HTML for static builds
+  let contentHtml: string = '';
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    const window = new JSDOM('').window;
+    const purify = DOMPurify(window);
+    const rawHtml = generateHTML(post.content, extensions);
+    contentHtml = purify.sanitize(rawHtml);
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <article className="max-w-3xl mx-auto">
@@ -57,7 +100,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <span>{post.minutesToRead} min read</span>
         </div>
         <div className="prose max-w-none">
-          <PostContentWrapper content={post.content} />
+          {process.env.NEXT_PHASE === 'phase-production-build' ? (
+            <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
+          ) : (
+            <PostContentWrapper content={post.content} />
+          )}
         </div>
       </article>
     </div>
@@ -65,7 +112,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 }
 
 async function getAllPosts(): Promise<PostCardProps[]> {
-  // Use mocks only during build phase
   if (process.env.NEXT_PHASE === 'phase-production-build') {
     return mockPosts;
   }
@@ -84,7 +130,6 @@ async function getAllPosts(): Promise<PostCardProps[]> {
 }
 
 async function getPostById(postId: string): Promise<PostCardProps | null> {
-  // Use mocks only during build phase
   if (process.env.NEXT_PHASE === 'phase-production-build') {
     return mockPosts.find((post) => post.id === postId) || null;
   }
