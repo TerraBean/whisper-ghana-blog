@@ -17,3 +17,18 @@ export interface TiptapContent { // Make sure to export them
     type: string;
     attrs?: Record<string, unknown>; 
   }
+
+  export interface PostCardProps {
+    id: string;
+    title: string;
+    description: string;
+    status: 'draft' | 'published';
+    category: string;
+    tags: string[];
+    author: string;
+    content: TiptapContent;
+    minutesToRead: number;
+    createdAt: string;
+    published_at: string | null;
+    scheduled_publish_at: string | null;
+  }

@@ -1,6 +1,6 @@
 // lib/data-fetching.ts
 
-import { PostCardProps } from '@/app/page'; // Adjust path if needed
+import { PostCardProps } from '@/app/types'; // Adjust path if needed
 
 export async function getPosts(): Promise<PostCardProps[]> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts`, {

@@ -2,7 +2,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
-import { PostCardProps } from '@/app/page';
+import { PostCardProps } from '@/app/types';
 import PostContentWrapper from '@/app/components/PostContentWrapper';
 
 interface BlogPostPageProps {

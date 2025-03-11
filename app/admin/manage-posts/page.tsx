@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { PostCardProps } from '@/app/page'; // Import PostCardProps type
+import { PostCardProps } from '@/app/types'; // Import PostCardProps type
 import { format } from 'date-fns';
 
 const ManagePostsPage = () => {

@@ -1,26 +1,11 @@
 // app/page.tsx
-
 import React from 'react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { getRecentPosts } from '@/utils/api';
-import { TiptapContent } from './types';
+import { PostCardProps } from './types'; // Adjust path if needed
 
-export interface PostCardProps {
-  id: string;
-  title: string;
-  description: string;
-  status: 'draft' | 'published'; // Ensure strict typing for status
-  category: string;
-  tags: string[]; // Array of tags
-  author: string; // Author name
-  content: TiptapContent; // Tiptap JSON content (refine later if needed)
-  minutesToRead: number;
-  createdAt: string; // ISO date string
-  published_at: string | null; // Published date (nullable for drafts)
-  scheduled_publish_at: string | null; // Scheduled publish date (nullable)
-}
-
+// PostCard component (moved to app/components/PostCard.tsx in Step 3, reused here for now)
 const PostCard: React.FC<PostCardProps> = ({
   id,
   title,
@@ -28,27 +13,39 @@ const PostCard: React.FC<PostCardProps> = ({
   category,
   minutesToRead,
   createdAt,
+  published_at,
+  tags,
 }) => {
-  const formattedDate = format(parseISO(createdAt), 'MMM d, yyyy');
+  const dateToShow = published_at || createdAt;
+  const formattedDate = format(parseISO(dateToShow), 'MMM d, yyyy');
+  const dateLabel = published_at ? 'Published' : 'Created';
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow duration-200">
       <Link href={`/blog/${id}`} className="block no-underline">
         <h2 className="text-xl font-bold text-gray-800 mb-2">{title}</h2>
         <p className="text-gray-700 mb-3">{description}</p>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">Category: {category}</span>
-          <span className="text-sm text-gray-500">{minutesToRead} min read</span>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {tags.map((tag) => (
+            <span key={tag} className="text-xs bg-gray-100 px-2 py-1 rounded">
+              {tag}
+            </span>
+          ))}
         </div>
-        <p className="text-sm text-gray-500 mt-2">Created at: {formattedDate}</p>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm text-gray-500">Category: {category}</span>
+          <span className="text-sm text-gray-500">{minutesToRead ?? 'N/A'} min read</span>
+        </div>
+        <p className="text-sm text-gray-500">
+          {dateLabel}: {formattedDate}
+        </p>
       </Link>
     </div>
   );
 };
 
-// --- BlogIndexPage Component (Now as Server Component for SSG) ---
 const BlogIndexPage = async () => {
-  const posts = await getRecentPosts();
+  const { posts, total } = await getRecentPosts(6);
 
   if (!posts || posts.length === 0) {
     return (
@@ -67,11 +64,18 @@ const BlogIndexPage = async () => {
           <PostCard key={post.id} {...post} />
         ))}
       </div>
+      {total > 6 && (
+        <div className="text-center mt-8">
+          <Link
+            href="/blog"
+            className="inline-block px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            View All Posts
+          </Link>
+        </div>
+      )}
     </div>
   );
 };
-
-// --- Function to Fetch Recent Posts (Server-Side) ---
-
 
 export default BlogIndexPage;
