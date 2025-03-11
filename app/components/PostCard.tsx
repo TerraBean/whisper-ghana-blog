@@ -2,9 +2,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
-import { PostCardProps } from '@/app/types'; // Adjust path to your types file
+import { PostCardProps } from '@/app/types';
 
-const PostCard: React.FC<PostCardProps> = ({
+interface PostCardComponentProps extends PostCardProps {
+  className?: string;
+}
+
+const PostCard: React.FC<PostCardComponentProps> = ({
   id,
   title,
   description,
@@ -13,18 +17,19 @@ const PostCard: React.FC<PostCardProps> = ({
   createdAt,
   published_at,
   tags,
+  className = '',
 }) => {
   const dateToShow = published_at || createdAt;
   const formattedDate = format(parseISO(dateToShow), 'MMM d, yyyy');
   const dateLabel = published_at ? 'Published' : 'Created';
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow duration-200">
+    <div className={`border border-gray-200 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow duration-200 ${className}`}>
       <Link href={`/blog/${id}`} className="block no-underline">
         <h2 className="text-xl font-bold text-gray-800 mb-2">{title}</h2>
         <p className="text-gray-700 mb-3">{description}</p>
         <div className="flex flex-wrap gap-2 mb-2">
-          {tags.map((tag) => (
+          {tags?.map((tag) => (
             <span key={tag} className="text-xs bg-gray-100 px-2 py-1 rounded">
               {tag}
             </span>
