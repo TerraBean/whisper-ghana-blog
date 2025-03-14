@@ -30,3 +30,4 @@ export async function getRecentPosts(limit: number = 6, isFeatured: boolean = fa
     return { posts: [], total: 0 };
   }
 }
+

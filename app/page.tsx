@@ -1,7 +1,8 @@
+// page.tsx
 import React from 'react';
-import Link from 'next/link';
 import { getRecentPosts } from '@/utils/api';
 import PostCard from '@/app/components/PostCard';
+import InfinitePostList from '@/app/components/InfinitePostList';
 import { PostCardProps } from './types';
 
 // FeaturedPostCard with distinct styling
@@ -11,7 +12,7 @@ const FeaturedPostCard: React.FC<PostCardProps> = (props) => (
 
 const BlogIndexPage = async () => {
   const { posts: featuredPosts } = await getRecentPosts(3, true); // Fetch up to 3 featured posts
-  const { posts: recentPosts, total } = await getRecentPosts(6); // Fetch 6 recent posts
+  const { posts: initialRecentPosts } = await getRecentPosts(6); // Fetch initial 6 recent posts
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -27,20 +28,9 @@ const BlogIndexPage = async () => {
         </section>
       )}
 
-      {/* Recent Posts Section */}
+      {/* Recent Posts Section with Infinite Scroll */}
       <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">Welcome to Our Blog</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recentPosts.map((post) => (
-          <PostCard key={post.id} {...post} />
-        ))}
-      </div>
-      {total > 6 && (
-        <div className="text-center mt-8">
-          <Link href="/blog" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-            View All Posts
-          </Link>
-        </div>
-      )}
+      <InfinitePostList initialPosts={initialRecentPosts} />
     </div>
   );
 };

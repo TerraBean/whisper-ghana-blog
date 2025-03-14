@@ -1,3 +1,4 @@
+// app/api/posts/recent/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { sql } from '@vercel/postgres';
 
@@ -6,6 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const limit = parseInt(searchParams.get('limit') || '6', 10);
+  const offset = parseInt(searchParams.get('offset') || '0', 10); // Extract offset
   const isFeatured = searchParams.get('isFeatured') === 'true';
 
   try {
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
       query += ` AND is_featured = TRUE`;
     }
 
-    query += ` ORDER BY published_at DESC LIMIT ${limit}`;
+    query += ` ORDER BY published_at DESC LIMIT ${limit} OFFSET ${offset}`; // Add OFFSET
 
     const postsResult = await sql.query(query);
     const posts = postsResult.rows.map(row => ({
