@@ -1,16 +1,17 @@
-// app/components/InfinitePostList.tsx
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import PostCard from './PostCard';
 import { PostCardProps } from '../types';
+import { getRecentPosts, getPostsByCategory } from '@/utils/api'; // Adjust path as needed
 
 interface InfinitePostListProps {
   initialPosts: PostCardProps[];
+  category?: string; // Optional category prop
 }
 
-const InfinitePostList: React.FC<InfinitePostListProps> = ({ initialPosts }) => {
+const InfinitePostList: React.FC<InfinitePostListProps> = ({ initialPosts, category }) => {
   const [posts, setPosts] = useState(initialPosts);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(initialPosts.length);
@@ -21,8 +22,12 @@ const InfinitePostList: React.FC<InfinitePostListProps> = ({ initialPosts }) => 
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     try {
-      const response = await fetch(`/api/posts/recent?limit=6&offset=${offset}`);
-      const { posts: newPosts } = await response.json();
+      const fetchFunction = category
+        ? () => getPostsByCategory(category, 6, offset)
+        : () => getRecentPosts(6);
+
+      const { posts: newPosts } = await fetchFunction();
+
       if (newPosts.length < 6) {
         setHasMore(false);
       }
@@ -49,7 +54,7 @@ const InfinitePostList: React.FC<InfinitePostListProps> = ({ initialPosts }) => 
     checkHeightAndLoad(); // Run on mount
     window.addEventListener('resize', checkHeightAndLoad); // Handle resize
     return () => window.removeEventListener('resize', checkHeightAndLoad);
-  }, [posts, hasMore]); // Re-run when posts or hasMore changes
+  }, [posts, hasMore]);
 
   return (
     <div ref={containerRef}>
