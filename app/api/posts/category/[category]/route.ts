@@ -1,8 +1,8 @@
 import { NextResponse,NextRequest } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-export async function GET(request: NextRequest, { params }: { params: { category: string } }) {
-  const  category  = params.category;
+export async function GET(request: NextRequest, { params }: { params: Promise<{ category: string }> }) {
+  const { category } = await params;
   const url = new URL(request.url);
   const limit = parseInt(url.searchParams.get('limit') || '6', 10);
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
