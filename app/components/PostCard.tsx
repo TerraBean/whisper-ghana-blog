@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
+import { enUS } from 'date-fns/locale';
 import { PostCardProps } from '@/app/types';
 
 interface PostCardComponentProps extends PostCardProps {
@@ -20,7 +21,7 @@ const PostCard: React.FC<PostCardComponentProps> = ({
   className = '',
 }) => {
   const dateToShow = published_at || createdAt;
-  const formattedDate = format(parseISO(dateToShow), 'MMM d, yyyy');
+  const formattedDate = format(parseISO(dateToShow), 'MMM d, yyyy', { locale: enUS });
   const dateLabel = published_at ? 'Published' : 'Created';
 
   return (
