@@ -48,7 +48,7 @@ export async function getRecentPosts(
       total: typeof data.total === 'number' ? data.total : 0 
     };
   } catch (error) {
-    console.error('Critical error in getRecentPosts:', error);
+    console.error('Critical error in getRecentPost:', error);
     return { posts: [], total: 0 };
   }
 }
