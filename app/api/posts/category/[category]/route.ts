@@ -1,4 +1,4 @@
-import { NextResponse,NextRequest } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { sql } from '@vercel/postgres';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ category: string }> }) {
@@ -8,11 +8,30 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
   try {
+    // Main query to fetch posts with related data
     const query = `
-      SELECT id, title, description, category, tags, author, content, minutes_to_read, created_at, published_at, status
-      FROM posts
-      WHERE status = 'published' AND published_at IS NOT NULL AND category = $1
-      ORDER BY published_at DESC
+      SELECT
+        p.id,
+        p.title,
+        p.description,
+        c.name AS category,
+        COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags,
+        a.name AS author,
+        p.content,
+        p.minutes_to_read,
+        p.created_at,
+        p.published_at,
+        p.status
+      FROM posts p
+      JOIN categories c ON p.category_id = c.id
+      LEFT JOIN post_tags pt ON p.id = pt.post_id
+      LEFT JOIN tags t ON pt.tag_id = t.id
+      LEFT JOIN authors a ON p.author_id = a.id
+      WHERE p.status = 'published'
+      AND p.published_at IS NOT NULL
+      AND c.name = $1
+      GROUP BY p.id, p.title, p.description, c.name, a.name, p.content, p.minutes_to_read, p.created_at, p.published_at, p.status
+      ORDER BY p.published_at DESC
       LIMIT $2 OFFSET $3
     `;
     const postsResult = await sql.query(query, [category, limit, offset]);
@@ -30,10 +49,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       status: row.status,
     }));
 
+    // Query to get the total count for pagination
     const countQuery = `
       SELECT COUNT(*)
-      FROM posts
-      WHERE status = 'published' AND published_at IS NOT NULL AND category = $1
+      FROM posts p
+      JOIN categories c ON p.category_id = c.id
+      WHERE p.status = 'published'
+      AND p.published_at IS NOT NULL
+      AND c.name = $1
     `;
     const countResult = await sql.query(countQuery, [category]);
     const total = parseInt(countResult.rows[0].count, 10);

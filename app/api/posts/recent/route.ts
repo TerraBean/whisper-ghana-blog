@@ -1,3 +1,4 @@
+// app/api/posts/recent/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { sql } from '@vercel/postgres';
 
@@ -5,11 +6,20 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const limit = parseInt(searchParams.get('limit') || '6', 10);
-  const offset = parseInt(searchParams.get('offset') || '0', 10);
+  
+  // Parse and validate limit and offset parameters
+  let limit = parseInt(searchParams.get('limit') || '6', 10);
+  let offset = parseInt(searchParams.get('offset') || '0', 10);
+  
+  // Ensure limit and offset are valid numbers
+  if (isNaN(limit) || limit <= 0) limit = 6;
+  if (isNaN(offset) || offset < 0) offset = 0;
+  
   const isFeatured = searchParams.get('isFeatured') === 'true';
 
   try {
+    console.log(`Fetching posts with limit: ${limit}, offset: ${offset}, featured: ${isFeatured}`);
+    
     const postsQuery = `
       SELECT
         p.id,
@@ -64,6 +74,7 @@ export async function GET(request: NextRequest) {
     const countResult = await sql.query(countQuery);
     const total = parseInt(countResult.rows[0].count, 10);
 
+    console.log(`Returning ${posts.length} posts out of total ${total}`);
     return NextResponse.json({ posts, total }, { status: 200 });
   } catch (error) {
     console.error('Error fetching posts:', error);
