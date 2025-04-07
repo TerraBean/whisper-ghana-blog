@@ -157,7 +157,7 @@ const CreatePostPage = () => {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             disabled={status === 'draft'}
           />
-          <p className="text-sm text-gray-500 mt-1">Leave blank for immediate publish when status is set to "Published".</p>
+          <p className="text-sm text-gray-500 mt-1">Leave blank for immediate publish when status is set to &quot;Published&quot;.</p>
         </div>
 
         <div>

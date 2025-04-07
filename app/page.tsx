@@ -11,7 +11,7 @@ const FeaturedPostCard: React.FC<PostCardProps> = (props) => (
 );
 
 const BlogIndexPage = async () => {
-  const { posts: featuredPosts } = await getRecentPosts(3, true); // Fetch up to 3 featured posts
+  const { posts: featuredPosts } = await getRecentPosts(3); // Fetch up to 3 featured posts
   const { posts: initialRecentPosts } = await getRecentPosts(6); // Fetch initial 6 recent posts
 
   return (
