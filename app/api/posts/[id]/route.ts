@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 // Type definition for route parameters
 
-
 import { NextRequest } from 'next/server';
 
 export async function GET(
@@ -26,19 +25,22 @@ export async function GET(
 
   try {
     const postResult = await sql`
-      SELECT
-        id,
-        title,
-        description,
-        category,
-        tags,
-        author,
-        content,
-        minutes_to_read,
-        created_at,
-        published_at
+      SELECT 
+        posts.id,
+        posts.title,
+        posts.content,
+        posts.created_at,
+        posts.updated_at,
+        posts.is_featured,
+        posts.published_at,
+        posts.category_id,
+        posts.author_id,
+        categories.name as category_name,
+        authors.name as author_name
       FROM posts
-      WHERE id = ${postId};
+      LEFT JOIN categories ON posts.category_id = categories.id
+      LEFT JOIN authors ON posts.author_id = authors.id
+      WHERE posts.id = ${postId}
     `;
 
     // --- 4. Post Not Found Check ---
@@ -51,14 +53,15 @@ export async function GET(
     const post = {
       id: row.id,
       title: row.title,
-      description: row.description,
-      category: row.category,
-      tags: row.tags,
-      author: row.author,
       content: row.content,
-      minutesToRead: row.minutes_to_read,
       createdAt: row.created_at?.toISOString(),
-      publishedAt: row.published_at?.toISOString(),
+      updatedAt: row.updated_at?.toISOString(),
+      featured: row.is_featured,
+      published: row.published_at,
+      categoryId: row.category_id,
+      authorId: row.author_id,
+      categoryName: row.category_name,
+      authorName: row.author_name,
     };
 
     // --- 6. Return JSON Response ---
@@ -81,15 +84,13 @@ const updatePostSchema = z.object({
   scheduled_publish_at: z.string().optional().nullable(),
 });
 
-
-
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
 
   const { params } = context;
-  const postId = (await params).id // Remove await here
+  const postId = (await params).id;
 
   try {
     // Validate request body
@@ -102,7 +103,6 @@ export async function PUT(
     // Convert tags to array format
     const tagsArray = tags?.split(',').map(tag => tag.trim()) || [];
     const tagsArrayLiteral = tagsArray.length > 0 ? `{${tagsArray.map(tag => `"${tag}"`).join(',')}}` : null;
-
 
     // Handle published_at logic
     let publishedAt = null;

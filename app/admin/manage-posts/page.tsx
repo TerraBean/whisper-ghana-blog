@@ -1,77 +1,66 @@
-// app/admin/manage-posts/page.tsx
-
-'use client'; // Mark as Client Component for useState, useEffect
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { PostCardProps } from '@/app/types'; // Import PostCardProps type
 import { format } from 'date-fns';
+import { Button, Select } from '@/components/ui';
+import { Post } from '@/types';
 
 const ManagePostsPage = () => {
-  const [posts, setPosts] = useState<PostCardProps[]>([]); // State to hold array of posts
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all'); // State for status filter, default 'all'
-
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
     const fetchPosts = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            // --- Construct URL with status filter ---
-            const url = new URL('/api/posts', window.location.origin); // Use URL constructor
-            if (statusFilter !== 'all') {
-                url.searchParams.append('status', statusFilter); // Add status query parameter
-            }
-
-
-            const response = await fetch(url.toString()); // Fetch from /api/posts with filter
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            setPosts(data.posts || []);
-            setLoading(false);
-        } catch (e: unknown) {
-            console.error('Error fetching posts:', e);
-            setError('Failed to load posts. Please try again later.');
-            setLoading(false);
+      setLoading(true);
+      setError(null);
+      try {
+        // Construct URL with status filter
+        const url = new URL('/api/posts', window.location.origin);
+        if (statusFilter !== 'all') {
+          url.searchParams.append('status', statusFilter);
         }
+
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setPosts(data.posts || []);
+      } catch (e: unknown) {
+        console.error('Error fetching posts:', e);
+        setError('Failed to load posts. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchPosts();
-}, [statusFilter]); // Re-fetch posts when statusFilter changes  <-- Added statusFilter to dependency array
-  if (loading) {
-    return <div>Loading posts...</div>; // Simple loading state
-  }
-
-  if (error) {
-    return <div className="text-red-500">Error: {error}</div>; // Display error message
-  }
+  }, [statusFilter]); 
 
   const handleDeletePost = async (postIdToDelete: string) => {
-    if (!window.confirm(`Are you sure you want to delete the post "${posts.find(p => p.id === postIdToDelete)?.title}"? This action cannot be undone.`)) {
-      return; // User cancelled deletion
+    const postToDelete = posts.find(p => p.id === postIdToDelete);
+    
+    if (!window.confirm(`Are you sure you want to delete the post "${postToDelete?.title}"? This action cannot be undone.`)) {
+      return;
     }
 
-    setLoading(true); // Start loading again during deletion
+    setLoading(true);
     setError(null);
 
     try {
       const response = await fetch(`/api/posts/${postIdToDelete}`, {
-        method: 'DELETE', // DELETE request to API
+        method: 'DELETE',
       });
 
       if (response.ok) {
-        console.log(`Post ${postIdToDelete} deleted successfully.`);
+        // Optimistically update frontend state
+        setPosts(posts.filter(post => post.id !== postIdToDelete));
         alert('Post deleted successfully!');
-        // --- Refresh the post list after successful deletion ---
-        const updatedPosts = posts.filter(post => post.id !== postIdToDelete); // Optimistically update frontend state
-        setPosts(updatedPosts);
       } else {
         const errorData = await response.json();
-        console.error('Failed to delete post:', errorData);
         setError(`Failed to delete post: ${errorData.error || 'Unknown error'}`);
         alert(`Failed to delete post: ${errorData.error || 'Unknown error'}`);
       }
@@ -80,9 +69,38 @@ const ManagePostsPage = () => {
       setError('Error deleting post. Please check the console.');
       alert('Error deleting post. Please check the console.');
     } finally {
-      setLoading(false); // End loading state
+      setLoading(false);
     }
   };
+
+  // Status filter options for the Select component
+  const filterOptions = [
+    { value: 'all', label: 'All Statuses' },
+    { value: 'published', label: 'Published Only' },
+    { value: 'draft', label: 'Drafts Only' },
+  ];
+
+  // Status badge component
+  const StatusBadge = ({ status }: { status: string }) => {
+    const badgeClasses = {
+      published: 'bg-green-100 text-green-800',
+      draft: 'bg-gray-100 text-gray-800',
+    };
+    
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClasses[status as keyof typeof badgeClasses] || 'bg-gray-100 text-gray-800'}`}>
+        {status === 'published' ? 'Published' : 'Draft'}
+      </span>
+    );
+  };
+
+  if (loading && posts.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-pulse text-lg">Loading posts...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -91,62 +109,96 @@ const ManagePostsPage = () => {
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Manage Blog Posts</h1>
         </div>
       </header>
+      
       <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-800">List of Blog Posts</h2>
-              <div>
-                <label htmlFor="status-filter" className="mr-2 text-sm font-medium text-gray-700">Filter by Status:</label>
-                <select
-                  id="status-filter"
+            <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center space-x-4">
+                <h2 className="text-xl font-semibold text-gray-800">List of Blog Posts</h2>
+                <Link href="/admin/create-post">
+                  <Button variant="primary" className="whitespace-nowrap">
+                    Create New Post
+                  </Button>
+                </Link>
+              </div>
+              
+              <div className="w-full md:w-64">
+                <Select
+                  label="Filter by Status"
+                  options={filterOptions}
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="published">Published Only</option>
-                  <option value="draft">Drafts Only</option>
-                </select>
+                  onChange={setStatusFilter}
+                />
               </div>
             </div>
 
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-700">{error}</p>
+              </div>
+            )}
 
             {posts.length === 0 ? (
-              <p className="text-gray-700">No posts available yet.</p>
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-700 mb-4">No posts available with the selected filter.</p>
+                <Link href="/admin/create-post">
+                  <Button variant="primary">Create your first post</Button>
+                </Link>
+              </div>
             ) : (
-              <div className="overflow-x-auto"> {/* Make table scrollable horizontally */}
+              <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                      {/* --- New "Status" Column Header --- */}
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published Date</th>
                       <th scope="col" className="relative px-6 py-3">
-                        <span className="sr-only">Edit/Delete</span>
+                        <span className="sr-only">Actions</span>
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {posts.map((post) => (
-                      <tr key={post.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{post.title}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.category || 'Uncategorized'}</td>
-                        {/* --- New "Status" Column Data --- */}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{post.status}</td>
+                      <tr key={post.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {post.title}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {post.published_at ? format(new Date(post.published_at), 'MMMM d, yyyy') : 'Draft'}
+                          {post.category || 'Uncategorized'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <StatusBadge status={post.status} />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {post.published_at 
+                            ? format(new Date(post.published_at), 'MMM d, yyyy')
+                            : post.scheduled_publish_at
+                              ? `Scheduled: ${format(new Date(post.scheduled_publish_at), 'MMM d, yyyy')}`
+                              : 'Not published'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link href={`/admin/edit-post/${post.id}`} className="text-blue-600 hover:text-blue-900">Edit</Link>
-                          <button
-                            onClick={() => handleDeletePost(post.id)}
-                            className="text-red-600 hover:text-red-900 ml-4"
-                          >
-                            Delete
-                          </button>
+                          <div className="flex justify-end space-x-2">
+                            <Link href={`/blog/${post.id}`} target="_blank">
+                              <Button variant="outline" className="text-xs px-2 py-1">
+                                View
+                              </Button>
+                            </Link>
+                            <Link href={`/admin/edit-post/${post.id}`}>
+                              <Button variant="secondary" className="text-xs px-2 py-1">
+                                Edit
+                              </Button>
+                            </Link>
+                            <Button 
+                              variant="danger" 
+                              className="text-xs px-2 py-1"
+                              onClick={() => handleDeletePost(post.id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
