@@ -1,60 +1,107 @@
 // app/api/posts/route.ts
 
 import { NextResponse } from "next/server";
-import { sql } from '@vercel/postgres';
+import { Pool } from 'pg';
 
 export const dynamic = 'force-dynamic';
+
+// Create a new pool using the database URL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const search = searchParams.get('search');
+    const status = searchParams.get('status');
     
-    // Start with a base query
-    let query = sql`SELECT id, title, slug, content, created_at, updated_at, category, featured_image`;
+    // Build the query parts separately for better control
+    let queryParts = [];
+    let parameters = [];
+    let paramIndex = 1;
     
-    // Note: We're explicitly selecting columns instead of using * to avoid missing column errors
+    const selectStatement = `
+      SELECT 
+        p.id, 
+        p.title, 
+        p.description,
+        p.content,
+        p.minutes_to_read,
+        p.created_at,
+        p.updated_at,
+        p.published_at,
+        p.status,
+        p.scheduled_publish_at,
+        p.is_featured,
+        p.author_id,
+        p.category_id,
+        c.name as category,
+        a.name as author_name
+      FROM posts p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN authors a ON p.author_id = a.id`;
     
-    // Add WHERE clause conditionally
-    if (category || search) {
-      query = sql`${query} FROM posts WHERE`;
-      
-      if (category) {
-        query = sql`${query} category = ${category}`;
-        if (search) {
-          query = sql`${query} AND`;
-        }
-      }
-      
-      if (search) {
-        query = sql`${query} (title ILIKE ${`%${search}%`} OR content ILIKE ${`%${search}%`})`;
-      }
-    } else {
-      query = sql`${query} FROM posts`;
+    // Where clause conditions
+    let conditions = [];
+    
+    if (category) {
+      conditions.push(`c.name = $${paramIndex}`);
+      parameters.push(category);
+      paramIndex++;
     }
     
-    // Order by created_at
-    query = sql`${query} ORDER BY created_at DESC`;
+    if (search) {
+      conditions.push(`(p.title ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex})`);
+      parameters.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    if (status && status !== 'all') {
+      conditions.push(`p.status = $${paramIndex}`);
+      parameters.push(status);
+      paramIndex++;
+    }
     
-    const results = await query; // Execute the constructed query
-    const posts = results.rows.map(row => ({
+    // Complete query
+    let fullQuery = selectStatement;
+    if (conditions.length > 0) {
+      fullQuery += ` WHERE ${conditions.join(' AND ')}`;
+    }
+    fullQuery += ` ORDER BY p.created_at DESC`;
+    
+    // Execute the query
+    const result = await pool.query(fullQuery, parameters);
+    
+    const posts = result.rows.map(row => ({
       id: row.id,
       title: row.title,
-      slug: row.slug,
+      description: row.description,
       content: row.content,
+      minutes_to_read: row.minutes_to_read,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      published_at: row.published_at,
+      status: row.status,
+      scheduled_publish_at: row.scheduled_publish_at,
+      is_featured: row.is_featured,
+      author_id: row.author_id,
+      category_id: row.category_id,
       category: row.category,
-      featured_image: row.featured_image,
-      // Don't try to access tags if the column doesn't exist
+      author: row.author_name, // Adding author property to match expected frontend property
+      author_name: row.author_name // Keep original property too
     }));
 
-    return NextResponse.json(posts);
+    // Return posts array in an object with total count
+    return NextResponse.json({ 
+      posts,
+      total: posts.length 
+    });
   } catch (error) {
     console.error('Error fetching posts:', error);
     return NextResponse.json(
-      { error: 'Error fetching posts' },
+      { error: 'Error fetching posts', details: (error as Error).message },
       { status: 500 }
     );
   }

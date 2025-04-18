@@ -17,7 +17,6 @@ const ManagePostsPage = () => {
       setLoading(true);
       setError(null);
       try {
-        // Construct URL with status filter
         const url = new URL('/api/posts', window.location.origin);
         if (statusFilter !== 'all') {
           url.searchParams.append('status', statusFilter);
@@ -28,6 +27,7 @@ const ManagePostsPage = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        console.log('Fetched posts:', data.posts);
         setPosts(data.posts || []);
       } catch (e: unknown) {
         console.error('Error fetching posts:', e);
@@ -38,11 +38,11 @@ const ManagePostsPage = () => {
     };
 
     fetchPosts();
-  }, [statusFilter]); 
+  }, [statusFilter]);
 
   const handleDeletePost = async (postIdToDelete: string) => {
     const postToDelete = posts.find(p => p.id === postIdToDelete);
-    
+
     if (!window.confirm(`Are you sure you want to delete the post "${postToDelete?.title}"? This action cannot be undone.`)) {
       return;
     }
@@ -56,7 +56,6 @@ const ManagePostsPage = () => {
       });
 
       if (response.ok) {
-        // Optimistically update frontend state
         setPosts(posts.filter(post => post.id !== postIdToDelete));
         alert('Post deleted successfully!');
       } else {
@@ -73,24 +72,65 @@ const ManagePostsPage = () => {
     }
   };
 
-  // Status filter options for the Select component
   const filterOptions = [
     { value: 'all', label: 'All Statuses' },
     { value: 'published', label: 'Published Only' },
     { value: 'draft', label: 'Drafts Only' },
   ];
 
-  // Status badge component
   const StatusBadge = ({ status }: { status: string }) => {
     const badgeClasses = {
       published: 'bg-green-100 text-green-800',
       draft: 'bg-gray-100 text-gray-800',
     };
-    
+
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClasses[status as keyof typeof badgeClasses] || 'bg-gray-100 text-gray-800'}`}>
         {status === 'published' ? 'Published' : 'Draft'}
       </span>
+    );
+  };
+
+  const PostCard = ({ post }: { post: Post }) => {
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4">
+        <div className="mb-2 flex justify-between items-start">
+          <h3 className="text-lg font-medium text-gray-900 mr-2">{post.title}</h3>
+          <StatusBadge status={post.status} />
+        </div>
+
+        <div className="space-y-2 text-sm text-gray-600 mb-3">
+          <p><span className="font-medium text-gray-700">Author:</span> {post.author_name || post.author || 'Anonymous'}</p>
+          <p><span className="font-medium text-gray-700">Category:</span> {post.category || post.categoryName || 'Uncategorized'}</p>
+          <p><span className="font-medium text-gray-700">Published:</span> {
+            post.published_at
+              ? format(new Date(post.published_at), 'MMM d, yyyy')
+              : post.scheduled_publish_at
+                ? `Scheduled: ${format(new Date(post.scheduled_publish_at), 'MMM d, yyyy')}`
+                : 'Not published'
+          }</p>
+        </div>
+
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+          <Link href={`/blog/${post.id}`} target="_blank" className="flex-1">
+            <Button variant="outline" className="w-full text-xs py-1">
+              View
+            </Button>
+          </Link>
+          <Link href={`/admin/edit-post/${post.id}`} className="flex-1">
+            <Button variant="secondary" className="w-full text-xs py-1">
+              Edit
+            </Button>
+          </Link>
+          <Button
+            variant="danger"
+            className="flex-1 text-xs py-1"
+            onClick={() => handleDeletePost(post.id)}
+          >
+            Delete
+          </Button>
+        </div>
+      </div>
     );
   };
 
@@ -109,7 +149,7 @@ const ManagePostsPage = () => {
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Manage Blog Posts</h1>
         </div>
       </header>
-      
+
       <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white p-6 rounded-lg shadow-md">
@@ -122,7 +162,7 @@ const ManagePostsPage = () => {
                   </Button>
                 </Link>
               </div>
-              
+
               <div className="w-full md:w-64">
                 <Select
                   label="Filter by Status"
@@ -147,64 +187,82 @@ const ManagePostsPage = () => {
                 </Link>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published Date</th>
-                      <th scope="col" className="relative px-6 py-3">
-                        <span className="sr-only">Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {posts.map((post) => (
-                      <tr key={post.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {post.title}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {post.category || 'Uncategorized'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <StatusBadge status={post.status} />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {post.published_at 
-                            ? format(new Date(post.published_at), 'MMM d, yyyy')
-                            : post.scheduled_publish_at
-                              ? `Scheduled: ${format(new Date(post.scheduled_publish_at), 'MMM d, yyyy')}`
-                              : 'Not published'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex justify-end space-x-2">
-                            <Link href={`/blog/${post.id}`} target="_blank">
-                              <Button variant="outline" className="text-xs px-2 py-1">
-                                View
-                              </Button>
-                            </Link>
-                            <Link href={`/admin/edit-post/${post.id}`}>
-                              <Button variant="secondary" className="text-xs px-2 py-1">
-                                Edit
-                              </Button>
-                            </Link>
-                            <Button 
-                              variant="danger" 
-                              className="text-xs px-2 py-1"
-                              onClick={() => handleDeletePost(post.id)}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </td>
+              <>
+                <div className="md:hidden">
+                  {posts.map((post) => (
+                    <PostCard key={post.id} post={post} />
+                  ))}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 table-fixed">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Title</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Author</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Category</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">Status</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Published Date</th>
+                        <th scope="col" className="relative px-6 py-3 w-1/6">
+                          <span className="sr-only">Actions</span>
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {posts.map((post) => (
+                        <tr key={post.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-0">
+                            <div className="truncate" title={post.title}>
+                              {post.title}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 max-w-0">
+                            <div className="truncate" title={post.author_name || post.author || 'Anonymous'}>
+                              {post.author_name || post.author || 'Anonymous'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 max-w-0">
+                            <div className="truncate" title={post.category || post.categoryName || 'Uncategorized'}>
+                              {post.category || post.categoryName || 'Uncategorized'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <StatusBadge status={post.status} />
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {post.published_at
+                              ? format(new Date(post.published_at), 'MMM d, yyyy')
+                              : post.scheduled_publish_at
+                                ? `Scheduled: ${format(new Date(post.scheduled_publish_at), 'MMM d, yyyy')}`
+                                : 'Not published'}
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm font-medium">
+                            <div className="flex justify-end space-x-2">
+                              <Link href={`/blog/${post.id}`} target="_blank" className="text-blue-600 hover:text-blue-800">
+                                <Button variant="outline" className="text-xs px-2 py-1">
+                                  View
+                                </Button>
+                              </Link>
+                              <Link href={`/admin/edit-post/${post.id}`} className="text-indigo-600 hover:text-indigo-800">
+                                <Button variant="secondary" className="text-xs px-2 py-1">
+                                  Edit
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="danger"
+                                className="text-xs px-2 py-1"
+                                onClick={() => handleDeletePost(post.id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </div>

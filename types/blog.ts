@@ -7,24 +7,28 @@ export type PostStatus = 'draft' | 'published';
 export interface Post {
   id: string;
   title: string;
-  description: string;
-  status: PostStatus;
-  category: string;
-  tags: string[];
-  author: string;
+  description: string | null;
   content: TiptapContent;
-  minutesToRead: number;
-  createdAt: string;
+  minutes_to_read: number;
+  created_at: string;
+  updated_at: string | null;
   published_at: string | null;
+  status: PostStatus;
   scheduled_publish_at: string | null;
+  is_featured: boolean;
+  author_id: string | null;
+  category_id: string | null;
+  category?: string; // From API response
+  categoryName?: string; // Alternative name
+  author?: string; // For author name
+  author_name?: string; // From API response
 }
 
 // Request schema for creating posts
 export interface CreatePostRequest {
   title: string;
-  description: string;
-  category: string;
-  tags: string;
+  description: string | null;
+  category_id: string;
   content: TiptapContent;
   status: PostStatus;
   scheduled_publish_at: string | null;
