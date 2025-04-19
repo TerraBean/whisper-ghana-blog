@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
-import AdminHeader from '../header';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -14,9 +13,14 @@ export default function AdminDashboard() {
     totalUsers: 0,
     publishedPosts: 0,
     draftPosts: 0,
-    recentPosts: [],
-    categories: [],
-    activityLog: []
+    recentPosts: [] as any[],
+    categories: [] as any[],
+    activityLog: [] as Array<{
+      action: string;
+      user: string;
+      target: string;
+      timestamp: string;
+    }>
   });
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState('week'); // 'week', 'month', 'year'
@@ -608,11 +612,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <AdminHeader />
-      
-      <main className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+    <div className="px-4 py-6 sm:px-0">
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome, {user?.name || 'User'}</h1>
@@ -649,8 +649,6 @@ export default function AdminDashboard() {
           ) : (
             renderRoleSpecificContent()
           )}
-        </div>
-      </main>
     </div>
   );
 }

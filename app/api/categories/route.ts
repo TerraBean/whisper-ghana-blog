@@ -9,8 +9,22 @@ const pool = new Pool({
 
 export async function GET() {
   try {
-    // Execute query to get all categories
-    const result = await pool.query(`SELECT * FROM categories ORDER BY name ASC`);
+    // Execute query to get all categories with post counts
+    const result = await pool.query(`
+      SELECT 
+        c.id, 
+        c.name, 
+        COUNT(p.id) FILTER (WHERE p.status = 'published' AND p.published_at IS NOT NULL) as count
+      FROM 
+        categories c
+      LEFT JOIN 
+        posts p ON c.id = p.category_id
+      GROUP BY 
+        c.id, c.name
+      ORDER BY 
+        c.name ASC
+    `);
+    
     return NextResponse.json({ categories: result.rows });
   } catch (err) {
     console.error('Error fetching categories:', err);

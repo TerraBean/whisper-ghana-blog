@@ -13,6 +13,7 @@ const PostCard: React.FC<PostCardProps> = ({
   id,
   title,
   description,
+  category,
   categoryName,
   minutes_to_read,
   created_at,
@@ -22,6 +23,9 @@ const PostCard: React.FC<PostCardProps> = ({
   const dateToShow = published_at || created_at;
   const formattedDate = format(parseISO(dateToShow), 'MMM d, yyyy', { locale: enUS });
   const dateLabel = published_at ? 'Published' : 'Created';
+  
+  // Use categoryName if available, otherwise use category, fall back to 'Uncategorized'
+  const displayCategory = categoryName || category || 'Uncategorized';
 
   return (
     <div className={`card border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow duration-200 bg-white dark:bg-gray-800 ${className}`}>
@@ -31,7 +35,7 @@ const PostCard: React.FC<PostCardProps> = ({
         
         <div className="flex flex-wrap gap-2 mb-3">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
-            {categoryName || 'Uncategorized'}
+            {displayCategory}
           </span>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
             {minutes_to_read ?? 'N/A'} min read

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import AdminHeader from '../header';
+import { useAuth } from '../../contexts/AuthContext';
 
 // User type for the component
 interface User {
@@ -23,6 +23,7 @@ export default function ManageUsersPage() {
       router.push('/auth/signin?callbackUrl=/admin/manage-users');
     },
   });
+  const { isAdmin } = useAuth();
 
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -42,7 +43,7 @@ export default function ManageUsersPage() {
 
   useEffect(() => {
     // Redirect if not authenticated or not admin
-    if (!session?.user?.isAdmin) {
+    if (!isAdmin) {
       router.push('/admin/dashboard');
       return;
     }
@@ -285,11 +286,7 @@ export default function ManageUsersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <AdminHeader />
-      
-      <main className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+    <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Users</h1>
             <button
@@ -522,8 +519,6 @@ export default function ManageUsersPage() {
               </div>
             </div>
           </div>
-        </div>
-      </main>
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirmation && (

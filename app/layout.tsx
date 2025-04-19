@@ -32,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${initialThemeSSR === 'dark' ? 'dark-theme' : ''}`}> {/* Apply initial theme class to <html> */}
+    <html lang="en" className={`${geistSans.variable} ${initialThemeSSR === 'dark' ? 'dark-theme' : ''}`}>{/* Apply initial theme class to <html> */}
       <NextAuthSessionProvider>
         <ThemeProvider>
           <RootLayoutInner geistMonoVariable={geistMono.variable}>

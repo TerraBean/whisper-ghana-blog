@@ -17,8 +17,7 @@ const CreatePostPage = () => {
     const result = await createPost({
       title: formData.title,
       description: formData.description,
-      category: formData.category,
-      tags: formData.tags,
+      category_id: formData.category, // Map category to category_id 
       content: formData.content || { type: 'doc', content: [] },
       status: formData.status,
       scheduled_publish_at: formData.scheduledPublishAt,
@@ -54,10 +53,10 @@ const CreatePostPage = () => {
   });
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-3xl">
-      <h1 className="text-3xl font-bold mb-8">Create New Blog Post</h1>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="px-4 py-6 sm:px-0">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Blog Post</h1>
+      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
         <Input
           label="Title"
           value={title}
@@ -129,7 +128,8 @@ const CreatePostPage = () => {
             <p className="text-red-700">{submitError}</p>
           </div>
         )}
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

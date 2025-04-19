@@ -136,23 +136,19 @@ const ManagePostsPage = () => {
 
   if (loading && posts.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-pulse text-lg">Loading posts...</div>
+      <div className="px-4 py-6 sm:px-0">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Manage Blog Posts</h1>
+        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 flex justify-center">
+          <div className="animate-pulse text-lg py-12">Loading posts...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="mx-auto max-w-7xl py-6 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Manage Blog Posts</h1>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="px-4 py-6 sm:px-0">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Manage Blog Posts</h1>
+      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
             <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center space-x-4">
                 <h2 className="text-xl font-semibold text-gray-800">List of Blog Posts</h2>
@@ -264,8 +260,6 @@ const ManagePostsPage = () => {
                 </div>
               </>
             )}
-          </div>
-        </div>
       </div>
     </div>
   );

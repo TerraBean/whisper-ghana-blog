@@ -43,7 +43,7 @@ const EditPostPage = () => {
             formattedContent = JSON.parse(post.content);
           } catch (e) {
             console.error("Failed to parse post content:", e);
-            formattedContent = null;
+            formattedContent = null as unknown as TiptapContent;
           }
         }
         
@@ -57,7 +57,7 @@ const EditPostPage = () => {
           title: post.title || '',
           description: post.description || '',
           category: post.category || post.categoryName || '',
-          tags: post.tags ? (Array.isArray(post.tags) ? post.tags.join(', ') : post.tags) : '',
+          tags: (post as any).tags ? (Array.isArray((post as any).tags) ? (post as any).tags.join(', ') : (post as any).tags) : '',
           content: formattedContent,
           status: post.status || 'draft',
           scheduledPublishAt: post.scheduled_publish_at || null,
@@ -82,8 +82,7 @@ const EditPostPage = () => {
     const result = await updatePost(postId, {
       title: formData.title,
       description: formData.description,
-      category: formData.category,
-      tags: tagsArray.join(','),
+      category_id: formData.category, // Update to match the expected property name
       content: formData.content,
       status: formData.status,
       scheduled_publish_at: formData.scheduledPublishAt,
@@ -122,8 +121,11 @@ const EditPostPage = () => {
   // Show loading state
   if (loadingPost) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-pulse text-lg">Loading post data...</div>
+      <div className="px-4 py-6 sm:px-0">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Blog Post</h1>
+        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 flex justify-center">
+          <div className="animate-pulse text-lg py-12">Loading post data...</div>
+        </div>
       </div>
     );
   }
@@ -131,8 +133,11 @@ const EditPostPage = () => {
   // Show error state
   if (loadError) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-red-500 text-lg">{loadError}</div>
+      <div className="px-4 py-6 sm:px-0">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Blog Post</h1>
+        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+          <div className="text-red-500 text-lg text-center py-12">{loadError}</div>
+        </div>
       </div>
     );
   }
@@ -141,16 +146,9 @@ const EditPostPage = () => {
   console.log("Content being passed to Editor:", content);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="mx-auto max-w-7xl py-6 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Edit Blog Post</h1>
-        </div>
-      </header>
-      
-      <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="px-4 py-6 sm:px-0">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Blog Post</h1>
+      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
             {/* Form content - replaced with usePostForm components */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Title Input */}
@@ -268,8 +266,6 @@ const EditPostPage = () => {
                 </div>
               )}
             </form>
-          </div>
-        </div>
       </div>
     </div>
   );

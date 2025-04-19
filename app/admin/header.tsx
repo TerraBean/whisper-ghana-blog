@@ -11,7 +11,7 @@ export default function AdminHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
-    return pathname === path;
+    return pathname === path || pathname?.startsWith(`${path}/`);
   };
 
   const navigation = [
