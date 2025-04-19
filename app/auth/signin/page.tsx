@@ -1,11 +1,36 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function SignIn() {
+// Loading component to show while the main content is loading
+function SignInLoadingSkeleton() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="flex justify-center">
+          <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center animate-pulse">
+            <span className="text-white font-bold text-xl">W</span>
+          </div>
+        </div>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          Loading...
+        </h2>
+        <div className="animate-pulse flex flex-col space-y-4">
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mx-auto"></div>
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded"></div>
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded"></div>
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Component that uses useSearchParams
+function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get('callbackUrl') || '/';
@@ -361,5 +386,14 @@ export default function SignIn() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main export that wraps the content in a Suspense boundary
+export default function SignIn() {
+  return (
+    <Suspense fallback={<SignInLoadingSkeleton />}>
+      <SignInContent />
+    </Suspense>
   );
 }
