@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { UserRole } from '../[...nextauth]/route';
 
 export async function GET() {
   try {

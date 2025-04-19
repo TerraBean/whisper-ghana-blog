@@ -19,8 +19,8 @@ export async function PATCH(
     const { name, email, role, password } = body;
 
     // Build the update query dynamically
-    let updateFields = [];
-    let updateValues: any[] = [];
+    const updateFields = [];
+    const updateValues: any[] = [];
     
     if (name) {
       updateFields.push('name = $1');

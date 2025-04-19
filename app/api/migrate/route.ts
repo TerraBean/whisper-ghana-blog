@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
 import { createPool } from '@vercel/postgres';
 
 export const dynamic = 'force-dynamic';

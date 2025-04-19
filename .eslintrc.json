@@ -1,0 +1,5 @@
+{
+  "extends": "next/core-web-vitals", >> .eslintrc.json && echo  "rules": {
+    "@typescript-eslint/no-explicit-any": "warn", >> .eslintrc.json && echo  "react/no-unescaped-entities": "warn",
+    "@typescript-eslint/no-unused-vars": "warn"  >> .eslintrc.json && echo  }
+}

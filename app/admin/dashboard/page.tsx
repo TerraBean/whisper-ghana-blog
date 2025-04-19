@@ -332,6 +332,22 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
+
+          <div className="mt-6 lg:col-span-2">
+            <div className="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Recent Comments</h3>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Feature coming soon
+                </span>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-6 text-center">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No comments available yet. We&apos;ll be adding comment functionality soon.
+                </p>
+              </div>
+            </div>
+          </div>
         </>
       );
     } else if (isEditor) {
@@ -538,6 +554,22 @@ export default function AdminDashboard() {
                     ))}
                   </ul>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 lg:col-span-2">
+            <div className="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Recent Comments</h3>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Feature coming soon
+                </span>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-6 text-center">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No comments available yet. We&apos;ll be adding comment functionality soon.
+                </p>
               </div>
             </div>
           </div>

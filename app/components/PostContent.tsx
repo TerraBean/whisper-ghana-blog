@@ -17,7 +17,6 @@ import TableHeader from '@tiptap/extension-table-header';
 import Placeholder from '@tiptap/extension-placeholder';
 import { createLowlight } from 'lowlight';
 import { TiptapContent } from '../types';
-import { useTheme } from '../contexts/ThemeContext';
 
 const lowlight = createLowlight({});
 
@@ -69,8 +68,6 @@ interface PostContentProps {
 }
 
 const PostContent: React.FC<PostContentProps> = ({ content }) => {
-  const { theme } = useTheme();
-  
   const processedHtml = useMemo(() => {
     if (!content || !content.type || !Array.isArray(content.content)) {
       return '<div class="text-gray-600 dark:text-gray-400">No content available.</div>';

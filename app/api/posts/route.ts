@@ -17,9 +17,8 @@ export async function GET(request: Request) {
     const search = searchParams.get('search');
     const status = searchParams.get('status');
     
-    // Build the query parts separately for better control
-    let queryParts = [];
-    let parameters = [];
+    // Build query parameters
+    const parameters = [];
     let paramIndex = 1;
     
     const selectStatement = `
@@ -44,7 +43,7 @@ export async function GET(request: Request) {
       LEFT JOIN authors a ON p.author_id = a.id`;
     
     // Where clause conditions
-    let conditions = [];
+    const conditions = [];
     
     if (category) {
       conditions.push(`c.name = $${paramIndex}`);

@@ -1,21 +1,31 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminHeader from '../header';
-import { useAuth } from '../../contexts/AuthContext';
+import { useSession } from 'next-auth/react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
+// User type for the component
 interface User {
   id: string;
   name: string;
   email: string;
   role: string;
   created_at: string;
+  updated_at: string;
 }
 
-export default function ManageUsers() {
+export default function ManageUsersPage() {
   const router = useRouter();
-  const { isAdmin, isAuthenticated } = useAuth();
+  const { data: session } = useSession({
+    required: true,
+    onUnauthenticated() {
+      router.push('/auth/signin?callbackUrl=/admin/manage-users');
+    },
+  });
+
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +40,13 @@ export default function ManageUsers() {
 
   useEffect(() => {
     // Redirect if not authenticated or not admin
-    if (!isAdmin) {
+    if (!session?.user?.isAdmin) {
       router.push('/admin/dashboard');
       return;
     }
 
     fetchUsers();
-  }, [isAdmin, router]);
+  }, [session, router]);
 
   const fetchUsers = async () => {
     setIsLoading(true);

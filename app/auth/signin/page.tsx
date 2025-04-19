@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 
 export default function SignIn() {
   const router = useRouter();
@@ -22,7 +21,7 @@ export default function SignIn() {
   // Clear error when inputs change
   useEffect(() => {
     if (error) setError('');
-  }, [email, password]);
+  }, [email, password, error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +92,7 @@ export default function SignIn() {
           </p>
           <div className="rounded-xl bg-white/10 p-6 backdrop-blur-sm">
             <blockquote className="text-indigo-100 italic">
-              "The best source for authentic Ghanaian news and stories"
+              &ldquo;The best source for authentic Ghanaian news and stories&rdquo;
             </blockquote>
             <div className="mt-4 flex justify-center gap-2">
               {[...Array(5)].map((_, i) => (
