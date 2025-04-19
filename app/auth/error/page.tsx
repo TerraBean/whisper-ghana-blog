@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function AuthError() {
+// This component uses useSearchParams and will be wrapped in Suspense
+function ErrorContent() {
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
@@ -74,5 +75,39 @@ export default function AuthError() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading component to show while the main content is loading
+function ErrorLoadingSkeleton() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+            Loading...
+          </h2>
+        </div>
+        
+        <div className="animate-pulse flex space-x-4">
+          <div className="flex-1 space-y-6 py-1">
+            <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mx-auto"></div>
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded"></div>
+              <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-5/6"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// The main export wraps the ErrorContent in a Suspense boundary
+export default function AuthError() {
+  return (
+    <Suspense fallback={<ErrorLoadingSkeleton />}>
+      <ErrorContent />
+    </Suspense>
   );
 }
