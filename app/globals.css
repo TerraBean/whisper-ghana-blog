@@ -2,23 +2,128 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Light theme colors */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-border: #e5e7eb;
+  --color-card: #ffffff;
+  --color-card-hover: #f9fafb;
+  --color-card-border: #e5e7eb;
+}
+
+.dark {
+  /* Dark theme colors with improved contrast */
+  --color-bg-primary: #111827;
+  --color-bg-secondary: #1f2937;
+  --color-text-primary: #f3f4f6;
+  --color-text-secondary: #d1d5db;
+  --color-accent: #6366f1;
+  --color-accent-hover: #818cf8;
+  --color-border: #374151;
+  --color-card: #1f2937;
+  --color-card-hover: #374151;
+  --color-card-border: #374151;
+}
+
 @layer base {
   html {
     @apply scroll-smooth;
-    /* Default Light Theme Page Styles (applied to html element) */
-    background-color: var(--page-bg, #f9f9f9); /* Default light background, fallback */
-    color: var(--page-text, #333333); /* Default light text color, fallback */
   }
 
   body {
-    @apply text-base antialiased tracking-tight;
+    @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-base antialiased tracking-tight;
     line-height: 1.65;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-gray-900 dark:text-white;
+  }
+  
+  h1 {
+    @apply text-3xl md:text-4xl mb-6;
+  }
+  
+  h2 {
+    @apply text-2xl md:text-3xl mb-4;
+  }
+  
+  h3 {
+    @apply text-xl md:text-2xl mb-3;
+  }
+  
+  p {
+    @apply mb-4 text-gray-800 dark:text-gray-200;
+  }
+  
+  a {
+    @apply text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors;
+  }
+  
+  blockquote {
+    @apply border-l-4 border-indigo-500 pl-4 italic text-gray-700 dark:text-gray-300 my-4;
+  }
+  
+  ul, ol {
+    @apply pl-5 mb-4 text-gray-800 dark:text-gray-200;
+  }
+  
+  ul {
+    @apply list-disc;
+  }
+  
+  ol {
+    @apply list-decimal;
+  }
+  
+  li {
+    @apply mb-1;
   }
 }
 
-/* Dark Theme Styles - Applied when 'dark-theme' class is on <html> or <body> */
-.dark-theme {
-  /* Override CSS Variables for Dark Theme Page Styles */
-  --page-bg: #181818; /* Dark page background */
-  --page-text: #ffffff; /* White page text */
+@layer components {
+  .text-content {
+    @apply text-gray-800 dark:text-gray-200;
+  }
+  
+  .text-content-light {
+    @apply text-gray-600 dark:text-gray-400;
+  }
+  
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700;
+  }
+  
+  .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-md transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 font-medium px-4 py-2 rounded-md transition-colors;
+  }
+  
+  .input-field {
+    @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-200;
+  }
+}
+
+/* Utility classes */
+.prose {
+  @apply max-w-none;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  @apply text-gray-900 dark:text-white;
+}
+
+.prose p, .prose ul, .prose ol {
+  @apply text-gray-800 dark:text-gray-200;
+}
+
+.prose a {
+  @apply text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 no-underline;
 }

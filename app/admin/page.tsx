@@ -1,51 +1,28 @@
-// app/admin/page.tsx
+'use client';
 
-import React from 'react';
-import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-const AdminDashboardPage = () => {
-    return (
-        <div className="min-h-screen bg-gray-100">
-            <header className="bg-white shadow">
-                <div className="mx-auto max-w-7xl py-6 px-4 sm:px-6 lg:px-8">
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Admin Dashboard</h1>
-                </div>
-            </header>
-            <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-                <div className="px-4 py-6 sm:px-0">
-                    {/* Dashboard Navigation (Top Navigation for now) */}
-                    <nav className="mb-4">
-                        <ul className="flex space-x-4">
-                            <li>
-                                <Link href="/admin" className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-block">
-                                    Dashboard
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/admin/create-post" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-block">
-                                    Create New Post
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/admin/manage-posts" className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-block">
-                                    Manage Posts
-                                </Link>
-                            </li>
-                            {/* Add more navigation links here in the future */}
-                        </ul>
-                    </nav>
-
-                    {/* Main Dashboard Content Area */}
-                    <div className="bg-white p-6 rounded-lg shadow-md">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Welcome to the Admin Dashboard!</h2>
-                        <p className="text-gray-700">
-                            Use the navigation above to manage your blog content.  Currently, only &quot;Create New Post&quot; is functional, but &quot;Manage Posts&quot; and other features will be added in future steps.
-                        </p>
-                    </div>
-                </div>
-            </div>
+// Redirect to the dashboard page
+export default function AdminPage() {
+  const router = useRouter();
+  
+  useEffect(() => {
+    router.push('/admin/dashboard');
+  }, [router]);
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="animate-pulse flex space-x-4">
+        <div className="rounded-full bg-indigo-400 dark:bg-indigo-600 h-12 w-12"></div>
+        <div className="flex-1 space-y-4 py-1">
+          <div className="h-4 bg-indigo-400 dark:bg-indigo-600 rounded w-3/4"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-indigo-300 dark:bg-indigo-700 rounded"></div>
+            <div className="h-4 bg-indigo-300 dark:bg-indigo-700 rounded w-5/6"></div>
+          </div>
         </div>
-    );
-};
-
-export default AdminDashboardPage;
+      </div>
+    </div>
+  );
+}

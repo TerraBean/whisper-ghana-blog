@@ -27,19 +27,38 @@ const EditPostPage = () => {
       
       try {
         const post = await getPostById(postId);
+        console.log("Fetched post:", post); // Debug log to see what's coming from API
         
         if (!post) {
           setLoadError('Post not found.');
           return;
         }
         
+        // Ensure content is properly formatted as TiptapContent
+        let formattedContent = post.content;
+        
+        // If content is a string (JSON string), parse it
+        if (typeof post.content === 'string') {
+          try {
+            formattedContent = JSON.parse(post.content);
+          } catch (e) {
+            console.error("Failed to parse post content:", e);
+            formattedContent = null;
+          }
+        }
+        
+        // Ensure the content has a type property if it exists
+        if (formattedContent && !formattedContent.type) {
+          formattedContent.type = 'doc';
+        }
+        
         // Prepare initial values for the form
         setInitialValues({
           title: post.title || '',
           description: post.description || '',
-          category: post.category || '',
-          tags: post.tags ? post.tags.join(', ') : '',
-          content: post.content || null,
+          category: post.category || post.categoryName || '',
+          tags: post.tags ? (Array.isArray(post.tags) ? post.tags.join(', ') : post.tags) : '',
+          content: formattedContent,
           status: post.status || 'draft',
           scheduledPublishAt: post.scheduled_publish_at || null,
         });
@@ -117,6 +136,9 @@ const EditPostPage = () => {
       </div>
     );
   }
+
+  // Log the content being passed to Editor for debugging
+  console.log("Content being passed to Editor:", content);
 
   return (
     <div className="min-h-screen bg-gray-100">

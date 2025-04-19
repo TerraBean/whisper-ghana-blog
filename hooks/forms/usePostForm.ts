@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react';
 import { TiptapContent, PostStatus } from '@/types';
 import { getCategories } from '@/services';
 
+// Define the Category type to match API response
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  count: number;
+  created_at?: string;
+}
+
 interface FormState {
   title: string;
   description: string;
@@ -38,7 +48,7 @@ export const usePostForm = ({ initialValues = {}, onSubmit }: UsePostFormProps) 
   });
 
   // UI state
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -49,8 +59,18 @@ export const usePostForm = ({ initialValues = {}, onSubmit }: UsePostFormProps) 
     const fetchCategories = async () => {
       setIsLoading(true);
       try {
-        const categoriesData = await getCategories();
-        setCategories(categoriesData);
+        const response = await fetch('/api/categories', {
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch categories: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Categories fetched:', data); // Debug log
+        setCategories(data.categories || []);
       } catch (error) {
         console.error('Failed to fetch categories:', error);
       } finally {
@@ -121,7 +141,7 @@ export const usePostForm = ({ initialValues = {}, onSubmit }: UsePostFormProps) 
   // Format categories for the Select component
   const categoryOptions = [
     { value: '', label: 'Select a category' },
-    ...categories.map(cat => ({ value: cat, label: cat }))
+    ...categories.map(cat => ({ value: cat.name, label: cat.name }))
   ];
 
   // Status options

@@ -41,9 +41,14 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
   const [cols, setCols] = useState(3);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const { theme, toggleTheme } = useTheme(); // Use Theme Context!
+  const [editorReady, setEditorReady] = useState(false);
+
+  // Log the initialContent for debugging
+  useEffect(() => {
+    console.log("Initial content received:", initialContent);
+  }, [initialContent]);
 
   const editor = useEditor({
-    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         codeBlock: false,
@@ -98,8 +103,25 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
     
       setContent(jsonContent as TiptapContent); 
     },
-    content: initialContent || null, // Set initial content
+    content: initialContent,
+    onCreate() {
+      setEditorReady(true);
+    }
   });
+
+  // Handle initial content when editor is ready
+  useEffect(() => {
+    if (editor && editorReady && initialContent) {
+      // First clear any existing content
+      editor.commands.clearContent();
+      
+      // Then set the new content
+      editor.commands.setContent(initialContent);
+      
+      // Also update the parent component's state
+      setContent(initialContent);
+    }
+  }, [editor, editorReady, initialContent, setContent]);
 
   // --- Utility functions ---
   const handleDoubleClick = useCallback((event: MouseEvent) => {
@@ -133,8 +155,6 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
     return `p-2 hover:bg-gray-100 rounded ${active ? 'bg-gray-200' : ''}`;
   }, []);
 
-
-
   // --- Editor Lifecycle Effects ---
   useEffect(() => {
     const currentEditorRef = editorRef.current;
@@ -148,7 +168,6 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
       }
     };
   }, [editorRef, handleDoubleClick]);
-
 
   return (
     <div className={theme === 'dark' ? 'dark-theme' : ''}> {/* Apply dark-theme class conditionally */}
@@ -166,7 +185,6 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
             {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />} {/* Icons to indicate theme */}
           </button>
         </div>
-
 
         {/* Fixed Toolbar */}
         <Toolbar

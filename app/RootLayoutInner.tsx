@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useTheme } from './contexts/ThemeContext';
+import MainNavigation from './components/MainNavigation';
 
 interface RootLayoutInnerProps {
   children: React.ReactNode;
@@ -13,7 +14,10 @@ export const RootLayoutInner: React.FC<RootLayoutInnerProps> = ({ children, geis
 
   return (
     <body className={`${geistMonoVariable} antialiased ${theme === 'dark' ? 'dark-theme' : ''}`}> {/* Apply geistMono font, antialiased, and dark-theme class to body */}
-      {children}
+      <MainNavigation />
+      <main className="min-h-screen">
+        {children}
+      </main>
     </body>
   );
 };

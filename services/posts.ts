@@ -191,7 +191,7 @@ export async function deletePost(id: string): Promise<{ success: boolean; error?
 /**
  * Get all available categories
  */
-export async function getCategories(): Promise<string[]> {
+export async function getCategories(): Promise<any[]> {
   try {
     const response = await fetch(`${BASE_URL}/api/categories`, {
       headers: { 'Content-Type': 'application/json' },
@@ -203,6 +203,7 @@ export async function getCategories(): Promise<string[]> {
     }
 
     const data = await response.json();
+    console.log('Categories fetched in service:', data); // Debug log
     return data.categories || [];
   } catch (error) {
     console.error('Error in getCategories:', error);

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { NextAuthSessionProvider } from "./contexts/AuthContext";
 import { RootLayoutInner } from "./RootLayoutInner";
 
 const geistSans = Geist({
@@ -32,11 +33,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${initialThemeSSR === 'dark' ? 'dark-theme' : ''}`}> {/* Apply initial theme class to <html> */}
-      <ThemeProvider>
-      <RootLayoutInner geistMonoVariable={geistMono.variable}>
-          {children}
-        </RootLayoutInner>
-      </ThemeProvider>
+      <NextAuthSessionProvider>
+        <ThemeProvider>
+          <RootLayoutInner geistMonoVariable={geistMono.variable}>
+            {children}
+          </RootLayoutInner>
+        </ThemeProvider>
+      </NextAuthSessionProvider>
     </html>
   );
 }

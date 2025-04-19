@@ -1,29 +1,88 @@
 import NextAuth from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials'; // Example provider
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { sql } from '@vercel/postgres';
+import bcrypt from 'bcryptjs';
+
+// Define user roles
+export enum UserRole {
+  USER = 'user',
+  EDITOR = 'editor',
+  ADMIN = 'admin',
+}
 
 export const authOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        username: { label: 'Username', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        // Replace with your actual authentication logic
-        if (credentials?.username === 'admin' && credentials?.password === 'password') {
-          return { id: '1', name: 'admin' }; // Example user
+        if (!credentials?.email || !credentials?.password) {
+          return null;
         }
-        return null;
-      },
-    }),
+
+        try {
+          // Find user in database
+          const { rows } = await sql`
+            SELECT * FROM users WHERE email = ${credentials.email}
+          `;
+
+          const user = rows[0];
+
+          if (!user || !user.password) {
+            return null;
+          }
+
+          // Verify password
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!isValid) {
+            return null;
+          }
+
+          // Return the user object
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role || UserRole.USER
+          };
+        } catch (error) {
+          console.error('Error during authentication:', error);
+          return null;
+        }
+      }
+    })
   ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.role = token.role;
+      }
+      return session;
+    }
+  },
   pages: {
-    signIn: '/auth/signin', // Custom sign-in page (optional)
+    signIn: '/auth/signin',
+    error: '/auth/error'
   },
   session: {
-    strategy: 'jwt' as 'jwt', // Use JWT for session management
+    strategy: 'jwt'
   },
+  secret: process.env.NEXTAUTH_SECRET || 'my-secret-key'
 };
 
 const handler = NextAuth(authOptions);
