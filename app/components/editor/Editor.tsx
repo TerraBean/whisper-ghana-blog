@@ -1,5 +1,3 @@
-// app/components/editor/Editor.tsx
-
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -20,33 +18,29 @@ import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Strike from '@tiptap/extension-strike';
 import OrderedList from '@tiptap/extension-ordered-list';
-import { Moon, Sun } from 'lucide-react'; // Icons for theme toggle
+import { Moon, Sun } from 'lucide-react';
 
 import { GLOBAL_STYLES } from './editorStyles';
 import Toolbar from './Toolbar';
-import { useTheme } from '../../contexts/ThemeContext'; // Import useTheme Hook
+import { useTheme } from '../../contexts/ThemeContext';
 import { TiptapContent } from '@/app/types';
 
 const lowlight = createLowlight({});
 
-// --- Define Props Interface for Editor Component ---
 interface EditorProps {
-  setContent: React.Dispatch<React.SetStateAction<TiptapContent | null>>; // Define setContent prop type
+  setContent: React.Dispatch<React.SetStateAction<TiptapContent | null>>;
   initialContent?: TiptapContent | null;
 }
 
-const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // Use EditorProps interface and destructure setContent prop
+const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => {
   const [showTableDialog, setShowTableDialog] = useState(false);
   const [rows, setRows] = useState(3);
   const [cols, setCols] = useState(3);
   const editorRef = useRef<HTMLDivElement | null>(null);
-  const { theme, toggleTheme } = useTheme(); // Use Theme Context!
+  const { theme, toggleTheme } = useTheme();
   const [editorReady, setEditorReady] = useState(false);
-
-  // Log the initialContent for debugging
-  useEffect(() => {
-    console.log("Initial content received:", initialContent);
-  }, [initialContent]);
+  const [isFocused, setIsFocused] = useState(false);
+  const initialContentLoadedRef = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -74,7 +68,7 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
       TableCell,
       TableHeader,
       HorizontalRule,
-      Placeholder.configure({ placeholder: 'Start typing...' }),
+      Placeholder.configure({ placeholder: 'Start writing your content here...' }),
       Image.configure({
         inline: true,
         allowBase64: true,
@@ -91,8 +85,18 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
       attributes: {
         class: 'prose max-w-none [&_ol]:list-decimal [&_ul]:list-disc',
       },
+      handleDOMEvents: {
+        focus: () => {
+          setIsFocused(true);
+          return false;
+        },
+        blur: () => {
+          setIsFocused(false);
+          return false;
+        },
+      },
     },
-    // --- Update editor content whenever editor state changes ---
+    // Update editor content whenever editor state changes
     onUpdate({ editor }) {
       const jsonContent = editor.getJSON();
 
@@ -103,7 +107,7 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
     
       setContent(jsonContent as TiptapContent); 
     },
-    content: initialContent,
+    content: initialContent || { type: 'doc', content: [] },
     onCreate() {
       setEditorReady(true);
     }
@@ -111,19 +115,16 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
 
   // Handle initial content when editor is ready
   useEffect(() => {
-    if (editor && editorReady && initialContent) {
-      // First clear any existing content
-      editor.commands.clearContent();
+    // Only run this effect if we have an editor, it's ready, and we haven't loaded content yet
+    if (editor && editorReady && initialContent && !initialContentLoadedRef.current) {
+      initialContentLoadedRef.current = true;
       
-      // Then set the new content
+      // Set the editor content directly, without clearing first
       editor.commands.setContent(initialContent);
-      
-      // Also update the parent component's state
-      setContent(initialContent);
     }
-  }, [editor, editorReady, initialContent, setContent]);
+  }, [editor, editorReady, initialContent]);
 
-  // --- Utility functions ---
+  // Utility functions
   const handleDoubleClick = useCallback((event: MouseEvent) => {
     if (!editor || !editorRef.current) return;
 
@@ -152,10 +153,10 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
   }, [editor]);
 
   const getButtonClass = useCallback((active: boolean): string => {
-    return `p-2 hover:bg-gray-100 rounded ${active ? 'bg-gray-200' : ''}`;
+    return `editor-toolbar-button ${active ? 'is-active' : ''}`;
   }, []);
 
-  // --- Editor Lifecycle Effects ---
+  // Editor Lifecycle Effects
   useEffect(() => {
     const currentEditorRef = editorRef.current;
     if (currentEditorRef) {
@@ -170,23 +171,12 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
   }, [editorRef, handleDoubleClick]);
 
   return (
-    <div className={theme === 'dark' ? 'dark-theme' : ''}> {/* Apply dark-theme class conditionally */}
+    <div className={theme === 'dark' ? 'dark-theme' : ''}>
       {/* Apply global styles */}
       <style>{GLOBAL_STYLES}</style>
 
-      <div className="max-w-4xl mx-auto p-4">
-        {/* Theme Toggle Button (Example - place in toolbar or elsewhere) */}
-        <div className="flex justify-end mb-2">
-          <button
-            onClick={toggleTheme}
-            className="p-2 hover:bg-gray-100 rounded"
-            title="Toggle Theme"
-          >
-            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />} {/* Icons to indicate theme */}
-          </button>
-        </div>
-
-        {/* Fixed Toolbar */}
+      <div className={`editor-container transition-all duration-200 ${isFocused ? 'ring-2 ring-indigo-300 dark:ring-indigo-800' : ''}`}>
+        {/* Toolbar */}
         <Toolbar
           editor={editor}
           showTableDialog={showTableDialog}
@@ -203,32 +193,53 @@ const Editor: React.FC<EditorProps> = ({ setContent, initialContent }) => { // U
         {/* Editor Content */}
         <div
           ref={editorRef}
-          className="border border-gray-200 rounded-b-lg p-4 min-h-[300px] max-h-[400px] overflow-y-auto"
+          className="editor-content"
         >
-          <style>{`
-            .ProseMirror {
-              min-height: 200px;
-              padding-bottom: 1rem;
-            }
-
-            .ProseMirror:focus {
-              outline: none;
-            }
-
-            .ProseMirror > *:last-child {
-              margin-bottom: 1rem;
-            }
-
-            .video-placeholder {
-              background-color: #f0f0f0;
-              border: 1px dashed #ccc;
-              padding: 10px;
-              text-align: center;
-            }
-          `}</style>
           <EditorContent editor={editor} />
         </div>
       </div>
+
+      {/* Table Dialog */}
+      {showTableDialog && (
+        <div className="editor-table-dialog">
+          <div className="flex flex-col gap-4">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Insert Table</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Rows</label>
+                <input
+                  type="number"
+                  value={rows}
+                  onChange={(e) => setRows(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label class    ="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Columns</label>
+                <input
+                  type="number"
+                  value={cols}
+                  onChange={(e) => setCols(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full"
+                />
+              </div>
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <button
+                onClick={() => setShowTableDialog(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleInsertTable}
+              >
+                Insert
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

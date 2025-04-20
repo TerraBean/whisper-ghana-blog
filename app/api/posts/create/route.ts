@@ -43,9 +43,9 @@ export async function POST(request: Request) {
     // Insert post with category_id instead of category name
     const result = await sql`
       INSERT INTO posts (
-        title, description, category_id, tags, author, content, status, published_at, scheduled_publish_at
+        title, description, category_id, content, status, published_at, scheduled_publish_at
       ) VALUES (
-        ${title}, ${description}, ${categoryId}, ${tagsArrayLiteral}, 'admin', ${JSON.stringify(content)}, ${status},
+        ${title}, ${description}, ${categoryId}, ${JSON.stringify(content)}, ${status},
         ${publishedAt}, ${scheduled_publish_at}
       ) RETURNING *
     `;

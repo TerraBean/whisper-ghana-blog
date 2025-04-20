@@ -1,6 +1,7 @@
 // app/components/editor/ToolbarButton.tsx
 
 import React from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface ToolbarButtonProps {
   isActive: () => boolean;
@@ -17,12 +18,17 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   icon,
   buttonClass,
 }) => {
+  const { theme } = useTheme();
+  const active = isActive();
+  
   return (
     <button
-      onClick={onClick}
-      className={buttonClass(isActive())}
-      title={title}
       type="button"
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      className={buttonClass(active)}
+      data-active={active}
     >
       {icon}
     </button>

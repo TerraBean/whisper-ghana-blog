@@ -1,9 +1,12 @@
 // app/blog/[postId]/page.tsx
 import React from 'react';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { PostCardProps } from '@/app/types';
 import PostContentWrapper from '@/app/components/PostContentWrapper';
+import CategoryDisplay from '@/app/components/CategoryDisplay';
+import BackToTop from '@/app/components/BackToTop';
 
 interface BlogPostPageProps {
   params: Promise<{ postId: string }>; // Correct type for Next.js 15.1.6 dynamic route
@@ -44,20 +47,91 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     ? format(parseISO(post.published_at), 'MMM d, yyyy')
     : 'Draft';
 
+  // Get related posts (same category)
+  const allPosts = await getAllPosts();
+  const relatedPosts = allPosts
+    .filter(p => p.id !== post.id && p.category === post.category)
+    .slice(0, 3);
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <article className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
-        <div className="mb-6 text-gray-600 flex items-center space-x-4">
-          <span>Category: {post.category || 'Uncategorized'}</span>
-          <span>Published: {formattedDate}</span>
-          <span>Author: {post.author || 'Unknown'}</span>
-          <span>{post.minutesToRead} min read</span>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-8 pb-16">
+      <div className="container mx-auto px-4">
+        <div className="mb-8">
+          <Link 
+            href="/blog" 
+            className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:underline transition-all"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to all posts
+          </Link>
         </div>
-        <div className="prose max-w-none">
-          <PostContentWrapper content={post.content} />
-        </div>
-      </article>
+
+        <article className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="p-8 md:p-12">
+            {post.category && (
+              <div className="mb-4">
+                <CategoryDisplay category={post.category || 'Uncategorized'} />
+              </div>
+            )}
+            
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">{post.title}</h1>
+            
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-8 pb-8 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span>{formattedDate}</span>
+              </div>
+              
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span>{post.author || 'Unknown'}</span>
+              </div>
+              
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>{post.minutesToRead || 'N/A'} min read</span>
+              </div>
+            </div>
+            
+            <div className="prose prose-lg dark:prose-invert max-w-none">
+              <PostContentWrapper content={post.content} />
+            </div>
+            
+            {post.tags && post.tags.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex flex-wrap gap-2">
+                  {post.tags.map(tag => (
+                    <span key={tag} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm rounded-full">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </article>
+
+        {relatedPosts.length > 0 && (
+          <div className="max-w-4xl mx-auto mt-16">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Related Posts</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedPosts.map((relatedPost) => (
+                <PostCard key={relatedPost.id} {...relatedPost} className="h-full" />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <BackToTop />
     </div>
   );
 }
