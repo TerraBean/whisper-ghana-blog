@@ -7,6 +7,38 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   
+  // Check if we're just requesting stats
+  const requestingStats = searchParams.get('stats') === 'true';
+  
+  // If stats are requested, we'll fetch different data
+  if (requestingStats) {
+    try {
+      // Query to get post counts by status
+      const statsQuery = `
+        SELECT 
+          COUNT(*) as total_count,
+          SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) as published_count,
+          SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft_count,
+          SUM(CASE WHEN status = 'scheduled' THEN 1 ELSE 0 END) as scheduled_count
+        FROM posts
+      `;
+      
+      const statsResult = await sql.query(statsQuery);
+      const stats = statsResult.rows[0];
+      
+      return NextResponse.json({
+        totalCount: parseInt(stats.total_count || '0', 10),
+        publishedCount: parseInt(stats.published_count || '0', 10),
+        draftCount: parseInt(stats.draft_count || '0', 10),
+        scheduledCount: parseInt(stats.scheduled_count || '0', 10)
+      }, { status: 200 });
+    } catch (error) {
+      console.error('Error fetching post statistics:', error);
+      return NextResponse.json({ error: 'Error fetching post statistics from database' }, { status: 500 });
+    }
+  }
+  
+  // Regular post fetching logic below for non-stats requests
   // Parse and validate limit and offset parameters
   let limit = parseInt(searchParams.get('limit') || '6', 10);
   let offset = parseInt(searchParams.get('offset') || '0', 10);

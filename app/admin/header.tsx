@@ -2,13 +2,15 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const { isAdmin, user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(`${path}/`);
@@ -20,6 +22,24 @@ export default function AdminHeader() {
     { name: 'Manage Posts', href: '/admin/manage-posts', visible: true },
     { name: 'Manage Users', href: '/admin/manage-users', visible: isAdmin },
   ];
+
+  // Enhanced navigation handler
+  const handleNavigation = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+    if (isNavigating) return; // Prevent multiple clicks
+    
+    // Show navigation feedback
+    setIsNavigating(true);
+    
+    // Use router.push for explicit navigation
+    router.push(href);
+    
+    // Reset navigation state after a delay
+    setTimeout(() => {
+      setIsNavigating(false);
+      setIsMobileMenuOpen(false); // Close mobile menu if open
+    }, 500);
+  };
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow">
@@ -35,19 +55,21 @@ export default function AdminHeader() {
               {navigation
                 .filter(item => item.visible)
                 .map((item) => (
-                  <Link
+                  <a
                     key={item.name}
                     href={item.href}
+                    onClick={(e) => handleNavigation(e, item.href)}
                     className={`
                       inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium
                       ${isActive(item.href)
                         ? 'border-indigo-500 text-gray-900 dark:text-white'
                         : 'border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200'
                       }
+                      ${isNavigating ? 'opacity-70 pointer-events-none' : ''}
                     `}
                   >
                     {item.name}
-                  </Link>
+                  </a>
                 ))}
             </nav>
           </div>
@@ -59,12 +81,13 @@ export default function AdminHeader() {
               <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                 {user?.name || 'User'}
               </span>
-              <Link
+              <a
                 href="/"
+                onClick={(e) => handleNavigation(e, '/')}
                 className="ml-4 inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 View Site
-              </Link>
+              </a>
             </div>
           </div>
           <div className="-mr-2 flex items-center sm:hidden">
@@ -120,20 +143,21 @@ export default function AdminHeader() {
             {navigation
               .filter(item => item.visible)
               .map((item) => (
-                <Link
+                <a
                   key={item.name}
                   href={item.href}
+                  onClick={(e) => handleNavigation(e, item.href)}
                   className={`
                     block pl-3 pr-4 py-2 border-l-4 text-base font-medium
                     ${isActive(item.href)
                       ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500 text-indigo-700 dark:text-indigo-300'
                       : 'border-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-800 dark:hover:text-white'
                     }
+                    ${isNavigating ? 'opacity-70 pointer-events-none' : ''}
                   `}
-                  onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.name}
-                </Link>
+                </a>
               ))}
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200 dark:border-gray-700">
@@ -146,10 +170,10 @@ export default function AdminHeader() {
               <div className="ml-3">
                 <div className="text-base font-medium text-gray-800 dark:text-white">{user?.name || 'User'}</div>
               </div>
-              <Link
+              <a
                 href="/"
+                onClick={(e) => handleNavigation(e, '/')}
                 className="ml-auto flex-shrink-0 bg-indigo-600 p-1 rounded-full text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                onClick={() => setIsMobileMenuOpen(false)}
               >
                 <span className="sr-only">View site</span>
                 <svg
@@ -166,7 +190,7 @@ export default function AdminHeader() {
                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                   />
                 </svg>
-              </Link>
+              </a>
             </div>
           </div>
         </div>

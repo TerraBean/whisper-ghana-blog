@@ -1,5 +1,5 @@
 // app/blog/[postId]/page.tsx
-import React from 'react';
+import React, { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
@@ -7,6 +7,7 @@ import { PostCardProps } from '@/app/types';
 import PostContentWrapper from '@/app/components/PostContentWrapper';
 import CategoryDisplay from '@/app/components/CategoryDisplay';
 import BackToTop from '@/app/components/BackToTop';
+import PostContent from '@/app/components/PostContent';
 
 interface BlogPostPageProps {
   params: Promise<{ postId: string }>; // Correct type for Next.js 15.1.6 dynamic route
@@ -38,101 +39,79 @@ export async function generateStaticParams() {
   return posts.map((post) => ({ postId: post.id }));
 }
 
-export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const { postId } = await params; // Await the params promise
-  const post = await getPostById(postId);
-  if (!post) notFound();
+// Define generateMetadata for better SEO and performance
+export async function generateMetadata({ params }: { params: { postId: string } }) {
+  // Fetch data in parallel with the page content
+  const post = await fetchPost(params.postId);
+  
+  if (!post) {
+    return {
+      title: 'Post not found',
+      description: 'The requested post could not be found.'
+    };
+  }
+  
+  return {
+    title: post.title,
+    description: post.excerpt || `Read ${post.title} on Whisper Ghana`,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt || `Read ${post.title} on Whisper Ghana`,
+      images: post.featured_image ? [post.featured_image] : [],
+      type: 'article',
+      publishedTime: post.published_at,
+      authors: post.author?.name || post.author_name,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt || `Read ${post.title} on Whisper Ghana`,
+      images: post.featured_image ? [post.featured_image] : [],
+    }
+  };
+}
 
-  const formattedDate = post.published_at
-    ? format(parseISO(post.published_at), 'MMM d, yyyy')
-    : 'Draft';
+// Add dynamic parameters to allow for incremental static regeneration
+export const dynamicParams = true;
 
-  // Get related posts (same category)
-  const allPosts = await getAllPosts();
-  const relatedPosts = allPosts
-    .filter(p => p.id !== post.id && p.category === post.category)
-    .slice(0, 3);
+// Optimize data fetching with caching and parallel requests
+async function fetchPost(postId: string) {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/posts/${postId}`, {
+      next: { 
+        revalidate: 300, // Cache for 5 minutes
+        tags: [`post-${postId}`], // Tag for targeted revalidation
+      }
+    });
+    
+    if (!res.ok) {
+      return null;
+    }
+    
+    return await res.json();
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    return null;
+  }
+}
+
+export default async function PostPage({ params }: BlogPostPageProps) { // Use the defined interface
+  const { postId } = await params; // Await params and destructure postId
+  const post = await fetchPost(postId); // Use the awaited postId
+  
+  if (!post) {
+    notFound();
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-8 pb-16">
-      <div className="container mx-auto px-4">
-        <div className="mb-8">
-          <Link 
-            href="/blog" 
-            className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:underline transition-all"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
-            Back to all posts
-          </Link>
-        </div>
-
-        <article className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-          <div className="p-8 md:p-12">
-            {post.category && (
-              <div className="mb-4">
-                <CategoryDisplay category={post.category || 'Uncategorized'} />
-              </div>
-            )}
-            
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">{post.title}</h1>
-            
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-8 pb-8 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                <span>{formattedDate}</span>
-              </div>
-              
-              <div className="flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                </svg>
-                <span>{post.author || 'Unknown'}</span>
-              </div>
-              
-              <div className="flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span>{post.minutesToRead || 'N/A'} min read</span>
-              </div>
-            </div>
-            
-            <div className="prose prose-lg dark:prose-invert max-w-none">
-              <PostContentWrapper content={post.content} />
-            </div>
-            
-            {post.tags && post.tags.length > 0 && (
-              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.map(tag => (
-                    <span key={tag} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm rounded-full">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </article>
-
-        {relatedPosts.length > 0 && (
-          <div className="max-w-4xl mx-auto mt-16">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Related Posts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {relatedPosts.map((relatedPost) => (
-                <PostCard key={relatedPost.id} {...relatedPost} className="h-full" />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-      
+    <>
+      <Suspense fallback={<div className="min-h-screen"></div>}>
+        <PostContentWrapper>
+          <PostContent post={post} />
+        </PostContentWrapper>
+      </Suspense>
       <BackToTop />
-    </div>
+    </>
   );
 }
 
@@ -173,13 +152,4 @@ async function getPostById(postId: string): Promise<PostCardProps | null> {
     console.error('Error in getPostById():', error);
     return null;
   }
-}
-
-export async function generateMetadata({ params }: { params: Promise<{ postId: string }> }) {
-  const { postId } = await params; // Await params here too
-  const post = await getPostById(postId);
-  return {
-    title: post?.title || 'Post Not Found',
-    description: post?.description || 'This post does not exist.',
-  };
 }

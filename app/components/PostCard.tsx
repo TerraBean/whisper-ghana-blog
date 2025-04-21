@@ -1,92 +1,108 @@
-// app/components/PostCard.tsx
-import React from 'react';
+'use client';
+
+import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { format, parseISO } from 'date-fns';
-import { enUS } from 'date-fns/locale';
+import { format } from 'date-fns';
+import { prefetchPostActions } from '@/utils/prefetch';
 import { Post } from '@/types';
 
-interface PostCardProps extends Post {
+interface PostCardProps {
+  post: Post;
   className?: string;
 }
 
-const PostCard: React.FC<PostCardProps> = ({
-  id,
-  title,
-  description,
-  category,
-  categoryName,
-  minutes_to_read,
-  created_at,
-  published_at,
-  className = '',
-}) => {
-  const dateToShow = published_at || created_at;
-  const formattedDate = format(parseISO(dateToShow), 'MMM d, yyyy', { locale: enUS });
-  const dateLabel = published_at ? 'Published' : 'Created';
-  
-  // Use categoryName if available, otherwise use category, fall back to 'Uncategorized'
-  const displayCategory = categoryName || category || 'Uncategorized';
+export default function PostCard({ post, className = '' }: PostCardProps) {
+  // Add safety check at the beginning
+  if (!post) {
+    return null;
+  }
 
-  // Generate a random gradient for the card header (purely decorative)
-  const gradients = [
-    'from-blue-400 to-purple-500',
-    'from-green-400 to-teal-500',
-    'from-pink-400 to-rose-500',
-    'from-amber-400 to-orange-500',
-    'from-indigo-400 to-blue-500',
-  ];
+  const [isPrefetched, setIsPrefetched] = useState(false);
   
-  // Use the post ID to consistently select the same gradient for the same post
-  const gradientIndex = id.charCodeAt(0) % gradients.length;
-  const gradient = gradients[gradientIndex];
+  // Handle post prefetching on hover
+  const handleMouseEnter = useCallback(() => {
+    if (!isPrefetched) {
+      // Start prefetching the post page
+      const postPath = `/blog/${post?.id}`;
+      prefetchPostActions.prefetch({ path: postPath, data: post });
+      setIsPrefetched(true);
+    }
+  }, [post, isPrefetched]);
+
+  // Format the date
+  const formattedDate = post?.published_at
+    ? format(new Date(post.published_at), 'MMMM d, yyyy')
+    : null;
 
   return (
-    <div className={`flex flex-col rounded-xl shadow-md hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-800 overflow-hidden ${className}`}>
-      {/* Decorative header with gradient */}
-      <div className={`h-3 w-full bg-gradient-to-r ${gradient}`}></div>
-      
-      <div className="flex-1 p-6">
-        <Link href={`/blog/${id}`} className="block no-underline hover:no-underline group">
-          {/* Category badge */}
-          <div className="mb-4">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
-              {displayCategory}
+    <article 
+      className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 ${className}`}
+      onMouseEnter={handleMouseEnter}
+    >
+      {post?.featured_image && (
+        <Link href={`/blog/${post?.id}`} className="block relative aspect-video overflow-hidden">
+          <Image
+            src={post.featured_image}
+            alt={post.title || 'Blog post'}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-500 hover:scale-105"
+          />
+          {post?.category && (
+            <span className="absolute top-4 left-4 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+              {post.category}
             </span>
-          </div>
-          
-          {/* Title */}
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-            {title}
-          </h2>
-          
-          {/* Description */}
-          {description && (
-            <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3 leading-relaxed">
-              {description}
-            </p>
           )}
         </Link>
+      )}
+      
+      <div className="p-5">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 line-clamp-2">
+          <Link 
+            href={`/blog/${post?.id}`}
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            prefetch={true}
+          >
+            {post.title || 'Untitled Post'}
+          </Link>
+        </h2>
         
-        {/* Footer info */}
-        <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex flex-wrap justify-between items-center text-sm text-gray-600 dark:text-gray-400">
-          <div className="flex items-center">
-            <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-            </svg>
-            {formattedDate}
+        <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+          {post?.excerpt || post?.description || 'No description available'}
+        </p>
+        
+        <div className="flex items-center justify-between text-sm">
+          <div className="text-gray-500 dark:text-gray-400">
+            {formattedDate || 'No date available'}
           </div>
-          <div className="flex items-center">
-            <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          
+          {post?.author && (
+            <div className="text-gray-500 dark:text-gray-400">
+              By {post.author?.name || post?.author_name || 'Unknown'}
+            </div>
+          )}
+        </div>
+        
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+          <Link 
+            href={`/blog/${post?.id}`}
+            className="text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors inline-flex items-center group"
+            prefetch={true}
+          >
+            Read more
+            <svg className="ml-2 w-4 h-4 group-hover:translate-x-0.5 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
-            {minutes_to_read ?? 'N/A'} min read
-          </div>
+          </Link>
+          
+          {post?.minutesToRead && (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {post.minutesToRead} min read
+            </span>
+          )}
         </div>
       </div>
-      
-      <div className="group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/10 transition-colors"></div>
-    </div>
+    </article>
   );
-};
-
-export default PostCard;
+}

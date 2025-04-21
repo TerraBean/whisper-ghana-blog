@@ -6,8 +6,8 @@ import InfinitePostList from '@/app/components/InfinitePostList';
 import { PostCardProps } from './types';
 
 // FeaturedPostCard with distinct styling
-const FeaturedPostCard: React.FC<PostCardProps> = (props) => (
-  <PostCard {...props} className="bg-yellow-100 border-yellow-300" />
+const FeaturedPostCard: React.FC<{ post: PostCardProps, className?: string }> = ({ post, className }) => (
+  <PostCard post={post} className="bg-yellow-100 border-yellow-300" />
 );
 
 const BlogIndexPage = async () => {
@@ -22,7 +22,7 @@ const BlogIndexPage = async () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Featured Stories</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {featuredPosts.map((post) => (
-              <FeaturedPostCard key={post.id} {...post} />
+              <FeaturedPostCard key={post.id} post={post} />
             ))}
           </div>
         </section>
