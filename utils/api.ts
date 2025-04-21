@@ -27,7 +27,7 @@ export async function getRecentPosts(
     
     const response = await fetch(url.toString(), {
       headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store', // Disable caching to ensure fresh data
+      next: { revalidate: 60 }, // Use ISR with 60 second revalidation instead of no-store
     });
 
     if (!response.ok) {
@@ -72,7 +72,7 @@ export async function getPostsByCategory(
 
     const response = await fetch(url.toString(), {
       headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
+      next: { revalidate: 60 }, // Use ISR with 60 second revalidation instead of no-store
     });
 
     if (!response.ok) {

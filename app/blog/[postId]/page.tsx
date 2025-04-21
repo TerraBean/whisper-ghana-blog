@@ -77,7 +77,12 @@ export const dynamicParams = true;
 // Optimize data fetching with caching and parallel requests
 async function fetchPost(postId: string) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/posts/${postId}`, {
+    // Use a proper URL construction with base URL
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    // Ensure we have a valid URL by joining the base URL and path properly
+    const url = new URL(`/api/posts/${postId}`, baseUrl);
+    
+    const res = await fetch(url.toString(), {
       next: { 
         revalidate: 300, // Cache for 5 minutes
         tags: [`post-${postId}`], // Tag for targeted revalidation
@@ -120,10 +125,15 @@ async function getAllPosts(): Promise<PostCardProps[]> {
     return mockPostsBase;
   }
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts`, {
+    // Fix URL construction here too
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const url = new URL('/api/posts', baseUrl);
+    
+    const response = await fetch(url.toString(), {
       headers: { 'Content-Type': 'application/json' },
-      cache: 'force-cache',
+      next: { revalidate: 60 }, // Use ISR instead of force-cache
     });
+    
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     return data.posts as PostCardProps[];
@@ -138,10 +148,15 @@ async function getPostById(postId: string): Promise<PostCardProps | null> {
     return mockPostsBase.find((p) => p.id === postId) || null;
   }
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/posts/${postId}`, {
+    // Fix URL construction here as well
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const url = new URL(`/api/posts/${postId}`, baseUrl);
+    
+    const response = await fetch(url.toString(), {
       headers: { 'Content-Type': 'application/json' },
       next: { revalidate: 60 },
     });
+    
     if (!response.ok) {
       if (response.status === 404) return null;
       throw new Error(`HTTP ${response.status}`);

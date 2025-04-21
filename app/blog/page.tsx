@@ -5,8 +5,18 @@ import PostCard from '@/app/components/PostCard';
 import CategoryNavigation from '@/app/components/CategoryNavigation';
 import BackToTop from '@/app/components/BackToTop';
 
+// Add metadata for better SEO
+export const metadata = {
+  title: 'Blog | Whisper Ghana',
+  description: 'Read our latest articles, insights and stories on Whisper Ghana Blog',
+};
+
+// Set a reasonable revalidation period for this page
+export const revalidate = 3600; // Revalidate once per hour
+
 const BlogPage = async () => {
-  const { posts } = await getRecentPosts(1000); // Fetch all posts (adjust limit as needed)
+  // Limit the number of posts to a more reasonable amount for static generation
+  const { posts } = await getRecentPosts(50); // Fetch up to 50 posts instead of 1000
 
   if (!posts || posts.length === 0) {
     return (
@@ -38,7 +48,7 @@ const BlogPage = async () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {posts.map((post) => (
-            <PostCard key={post.id} {...post} className="h-full" />
+            <PostCard key={post.id} post={post} />
           ))}
         </div>
       </div>
